@@ -1,0 +1,4 @@
+# IDE related
+.idea/
+*.iml
+/cryptoexchange-wallet-info
