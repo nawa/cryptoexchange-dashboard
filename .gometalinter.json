@@ -1,0 +1,6 @@
+{
+  "Exclude": [
+    "comment or be unexported",
+    "cmd/sync.go.*Potential hardcoded credentials"
+  ]
+}

@@ -2,10 +2,40 @@
 
 
 [[projects]]
+  name = "github.com/Sirupsen/logrus"
+  packages = ["."]
+  revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
+  version = "v1.0.4"
+
+[[projects]]
+  name = "github.com/gorilla/websocket"
+  packages = ["."]
+  revision = "ea4d1f681babbce9545c9c5f3d5194a789c89f5b"
+  version = "v1.2.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/errwrap"
+  packages = ["."]
+  revision = "7554cd9344cec97297fa6649b055a8c98c2a1e55"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-multierror"
+  packages = ["."]
+  revision = "b7773ae218740a7be65057fc60b366a49b538a44"
+
+[[projects]]
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
+
+[[projects]]
+  name = "github.com/shopspring/decimal"
+  packages = ["."]
+  revision = "9ca7f51822d222ae4e246f070f9aad863599bd1a"
+  version = "1.0.0"
 
 [[projects]]
   name = "github.com/spf13/cobra"
@@ -19,9 +49,33 @@
   revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
   version = "v1.0.0"
 
+[[projects]]
+  branch = "master"
+  name = "github.com/thebotguys/signalr"
+  packages = ["."]
+  revision = "58078e12c98f4d4feb9ad2f992fde4db192de7a0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/toorop/go-bittrex"
+  packages = ["."]
+  revision = "8010de6d169057bcadead25db813697ef42ba1c8"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+  packages = ["ssh/terminal"]
+  revision = "13931e22f9e72ea58bb73048bc752b48c6d4d4ac"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix","windows"]
+  revision = "810d7000345868fc619eb81f46307107118f4ae1"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "07464de8b16f5ca646bc999fee5c3d7fd39928d9036889da483bc8e490a0b9a9"
+  inputs-digest = "1f69b6c2b4372101a54d4860174b9709277beffee4235190652f17e869173226"
   solver-name = "gps-cdcl"
   solver-version = 1
