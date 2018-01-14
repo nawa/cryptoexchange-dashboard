@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/globalsign/mgo"
+	"github.com/nawa/cryptoexchange-wallet-info/shared/storage/mongo"
 	"github.com/nawa/cryptoexchange-wallet-info/sync"
 	"github.com/nawa/cryptoexchange-wallet-info/sync/exchange"
 	"github.com/spf13/cobra"
@@ -61,7 +63,19 @@ func syncCmdRun(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("exchange error: %s", err)
 	}
 
-	service := sync.NewSyncService(exchange)
+	dialInfo, err := mgo.ParseURL(mongoURL)
+	if err != nil {
+		return fmt.Errorf("mongo URL is incorrect: %s", err)
+	}
+
+	session, err := mgo.DialWithInfo(dialInfo)
+	if err != nil {
+		return fmt.Errorf("can't connect to mongo: %s", err)
+	}
+
+	balanceStorage := mongo.NewBalanceStorage(session, true)
+
+	service := sync.NewSyncService(exchange, balanceStorage)
 	ticker := sync.NewSyncTicker(time.Second*time.Duration(period), service)
 	err = ticker.Start()
 	if err != nil {

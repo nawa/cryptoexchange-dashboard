@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/nawa/cryptoexchange-wallet-info/sync/model"
 	"github.com/shopspring/decimal"
 	"github.com/toorop/go-bittrex"
 )
@@ -24,7 +25,7 @@ func NewBittrexExchange(apiKey, apiSecret string) *BittrexExchange {
 	}
 }
 
-func (be *BittrexExchange) GetBalance() (*Balance, error) {
+func (be *BittrexExchange) GetBalance() (*model.Balance, error) {
 	var (
 		balances []bittrex.Balance
 		errCh    = make(chan error, 2)
@@ -59,7 +60,7 @@ func (be *BittrexExchange) GetBalance() (*Balance, error) {
 		return nil, err
 	}
 
-	result := &Balance{}
+	result := &model.Balance{}
 	for _, b := range balances {
 		balance, _ := b.Balance.Float64()
 		if balance > 0 {
@@ -78,7 +79,7 @@ func (be *BittrexExchange) GetBalance() (*Balance, error) {
 
 			result.Time = be.syncTime
 			result.Currencies = append(result.Currencies,
-				CurrencyBalance{
+				model.CurrencyBalance{
 					Currency:   b.Currency,
 					Amount:     balance,
 					BTCAmount:  btcBalance,

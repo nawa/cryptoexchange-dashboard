@@ -8,6 +8,12 @@
   version = "v1.0.4"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/globalsign/mgo"
+  packages = [".","bson","internal/json","internal/sasl","internal/scram"]
+  revision = "5be15cc6a44937b6937a9487e1633f8a5fb25e4a"
+
+[[projects]]
   name = "github.com/gorilla/websocket"
   packages = ["."]
   revision = "ea4d1f681babbce9545c9c5f3d5194a789c89f5b"
@@ -76,6 +82,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1f69b6c2b4372101a54d4860174b9709277beffee4235190652f17e869173226"
+  inputs-digest = "fc08bfb6062a171744bf4aaa0306125cf9b586a336e0eb11c9937c3e9f198e88"
   solver-name = "gps-cdcl"
   solver-version = 1

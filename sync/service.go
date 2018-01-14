@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/nawa/cryptoexchange-wallet-info/shared/storage"
 	"github.com/nawa/cryptoexchange-wallet-info/sync/exchange"
 )
 
@@ -12,12 +13,14 @@ type Service interface {
 }
 
 type syncService struct {
-	exchange exchange.Exchange
+	exchange       exchange.Exchange
+	balanceStorage storage.BalanceStorage
 }
 
-func NewSyncService(exchange exchange.Exchange) Service {
+func NewSyncService(exchange exchange.Exchange, balanceStorage storage.BalanceStorage) Service {
 	return &syncService{
-		exchange: exchange,
+		exchange:       exchange,
+		balanceStorage: balanceStorage,
 	}
 }
 
@@ -26,10 +29,18 @@ func (s *syncService) Sync() error {
 	if err != nil {
 		return err
 	}
-	jsonBalance, err := json.MarshalIndent(balance, "", "  ")
+
+	err = s.balanceStorage.Save(balance.ToStorageModel()...)
 	if err != nil {
 		return err
 	}
-	log.WithField("balance", string(jsonBalance)).Debug()
+
+	if log.GetLevel() >= log.DebugLevel {
+		jsonBalance, err := json.MarshalIndent(balance, "", "  ")
+		if err != nil {
+			return err
+		}
+		log.WithField("balance", string(jsonBalance)).Debug()
+	}
 	return nil
 }

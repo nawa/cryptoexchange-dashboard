@@ -1,23 +1,8 @@
 package exchange
 
-import "time"
-
-type CurrencyBalance struct {
-	Currency   string
-	Amount     float64
-	BTCAmount  float64
-	BTCRate    float64
-	USDTAmount float64
-}
-
-type Balance struct {
-	Currencies []CurrencyBalance
-	BTCAmount  float64
-	USDTAmount float64
-	Time       time.Time
-}
+import "github.com/nawa/cryptoexchange-wallet-info/sync/model"
 
 type Exchange interface {
-	GetBalance() (*Balance, error)
+	GetBalance() (*model.Balance, error)
 	Ping() error
 }
