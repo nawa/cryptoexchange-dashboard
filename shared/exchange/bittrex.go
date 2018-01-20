@@ -79,6 +79,7 @@ func (be *BittrexExchange) GetBalance() (*model.Balance, error) {
 				return nil, err
 			}
 
+			result.Exchange = model.ExchangeTypeBittrex
 			result.Time = be.syncTime
 			result.Currencies = append(result.Currencies,
 				model.CurrencyBalance{

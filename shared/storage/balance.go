@@ -8,6 +8,7 @@ type BalanceStorage interface {
 }
 
 type Balance struct {
+	Exchange   string    `bson:"exchange"`
 	Currency   string    `bson:"currency"`
 	Amount     float64   `bson:"amount"`
 	BTCAmount  float64   `bson:"btc_amount"`

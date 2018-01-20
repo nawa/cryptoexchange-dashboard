@@ -2,7 +2,10 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"os"
+
+	"github.com/nawa/cryptoexchange-wallet-info/shared/model"
 
 	"github.com/spf13/cobra"
 )
@@ -19,14 +22,14 @@ type APICommand struct {
 }
 
 func (c *APICommand) BindArgs(cobraCmd *cobra.Command) {
-	cobraCmd.Flags().StringVarP(&c.ExchangeType, "exchange-type", "e", "bittrex", "Exchange type: [bittrex] (Only Bittrex is supported now)")
+	cobraCmd.Flags().StringVarP(&c.ExchangeType, "exchange-type", "e", string(model.ExchangeTypeBittrex), fmt.Sprintf("Exchange type: [%s] (Only Bittrex is supported now)", model.ExchangeTypeBittrex))
 	cobraCmd.Flags().StringVarP(&c.APIKey, "api-key", "k", "", "API Key. Can be skipped and provided by environment variable EXCHANGE_API_KEY")
 	cobraCmd.Flags().StringVarP(&c.APISecret, "api-secret", "s", "", "API Secret. Can be skipped and provided by environment variable EXCHANGE_API_SECRET")
 }
 
 func (c *APICommand) CheckArgs() error {
-	if c.ExchangeType != "bittrex" {
-		return errors.New("--exchange-type is wrong, supported values: [bittrex] (Only Bittrex is supported now)")
+	if c.ExchangeType != string(model.ExchangeTypeBittrex) {
+		return fmt.Errorf("--exchange-type is wrong, supported values: [%s] (Only Bittrex is supported now)", model.ExchangeTypeBittrex)
 	}
 
 	if c.APIKey == "" {

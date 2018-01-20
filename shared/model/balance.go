@@ -16,6 +16,7 @@ type CurrencyBalance struct {
 
 type Balance struct {
 	Currencies []CurrencyBalance
+	Exchange   ExchangeType
 	BTCAmount  float64
 	USDTAmount float64
 	Time       time.Time
@@ -23,6 +24,7 @@ type Balance struct {
 
 func (b *Balance) ToStorageModel() (result []storage.Balance) {
 	result = append(result, storage.Balance{
+		Exchange:   string(b.Exchange),
 		Currency:   "total",
 		Amount:     b.BTCAmount,
 		BTCRate:    1,
@@ -33,6 +35,7 @@ func (b *Balance) ToStorageModel() (result []storage.Balance) {
 
 	for _, c := range b.Currencies {
 		result = append(result, storage.Balance{
+			Exchange:   string(b.Exchange),
 			Currency:   c.Currency,
 			Amount:     c.Amount,
 			BTCRate:    c.BTCRate,
