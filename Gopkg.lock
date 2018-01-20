@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/0xAX/notificator"
+  packages = ["."]
+  revision = "88d57ee9043ba88d6a62e437fa15dda1ca0d2b59"
+
+[[projects]]
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
   revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
@@ -82,6 +88,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fc08bfb6062a171744bf4aaa0306125cf9b586a336e0eb11c9937c3e9f198e88"
+  inputs-digest = "35eda509a60844b5ecd4697c0ca5934b056cdd1d8a3e54169e0e50faaab4e4f1"
   solver-name = "gps-cdcl"
   solver-version = 1

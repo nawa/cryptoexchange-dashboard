@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 
 	log "github.com/Sirupsen/logrus"
+
+	"github.com/nawa/cryptoexchange-wallet-info/shared/exchange"
 	"github.com/nawa/cryptoexchange-wallet-info/shared/storage"
-	"github.com/nawa/cryptoexchange-wallet-info/sync/exchange"
 )
 
 type Service interface {

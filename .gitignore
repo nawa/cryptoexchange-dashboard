@@ -2,3 +2,5 @@
 .idea/
 *.iml
 /cryptoexchange-wallet-info
+/debug
+/.vscode

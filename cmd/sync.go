@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -9,61 +8,57 @@ import (
 	"time"
 
 	"github.com/globalsign/mgo"
+	"github.com/spf13/cobra"
+
+	"github.com/nawa/cryptoexchange-wallet-info/shared/exchange"
 	"github.com/nawa/cryptoexchange-wallet-info/shared/storage/mongo"
 	"github.com/nawa/cryptoexchange-wallet-info/sync"
-	"github.com/nawa/cryptoexchange-wallet-info/sync/exchange"
-	"github.com/spf13/cobra"
 )
 
-const (
-	envBittrexAPIKey    = "BITTREX_API_KEY"
-	envBittrexAPISecret = "BITTREX_API_SECRET"
-)
+type SyncCommand struct {
+	cobra.Command
+	APICommand
+	MongoURL   string
+	SyncPeriod int
+}
 
 var (
-	mongoURL     string
-	exchangeType string
-	apiKey       string
-	apiSecret    string
-	period       int
-
-	syncCmd = &cobra.Command{
-		Use:   "sync",
-		Short: "Syncs your wallet data",
-		Long:  "Syncs your wallet data with database in background. \nATTENTION: would be more secure is to generate keys with readonly permission",
-		RunE:  syncCmdRun,
+	syncCmd = &SyncCommand{
+		Command: cobra.Command{
+			Use:   "sync",
+			Short: "Syncs your wallet data",
+			Long:  "Syncs your wallet data with database in background. \nATTENTION: would be more secure is to generate keys with readonly permission",
+		},
 	}
 )
 
 func init() {
-
-	syncCmd.Flags().StringVarP(&mongoURL, "db-url", "u", "bittrex", "Url to MongoDB")
-	syncCmd.Flags().StringVarP(&exchangeType, "exchange-type", "e", "", "Exchange type: [bittrex] (Only Bittrex is supported now)")
-	syncCmd.Flags().StringVarP(&apiKey, "api-key", "k", "", "API Key. Can be skipped and provided by environment variable BITTREX_API_KEY")
-	syncCmd.Flags().StringVarP(&apiSecret, "api-secret", "s", "", "API Secret. Can be skipped and provided by environment variable BITTREX_API_SECRET")
-	syncCmd.Flags().IntVarP(&period, "period", "p", 10, "Synchronization period in sec")
+	syncCmd.APICommand.BindArgs(&syncCmd.Command)
+	syncCmd.Command.Flags().StringVarP(&syncCmd.MongoURL, "db-url", "u", "bittrex", "Url to MongoDB")
+	syncCmd.Command.Flags().IntVarP(&syncCmd.SyncPeriod, "period", "p", 10, "Synchronization period in sec")
 
 	err := syncCmd.MarkFlagRequired("db-url")
 	if err != nil {
 		panic(err)
 	}
 
-	rootCmd.AddCommand(syncCmd)
+	syncCmd.RunE = syncCmd.run
+	rootCmd.AddCommand(&syncCmd.Command)
 }
 
-func syncCmdRun(_ *cobra.Command, _ []string) error {
-	err := checkRequiredArgs()
+func (c *SyncCommand) run(_ *cobra.Command, _ []string) error {
+	err := c.CheckArgs()
 	if err != nil {
 		return err
 	}
 
-	exchange := exchange.NewBittrexExchange(apiKey, apiSecret)
+	exchange := exchange.NewBittrexExchange(c.APIKey, c.APISecret)
 	err = exchange.Ping()
 	if err != nil {
 		return fmt.Errorf("exchange error: %s", err)
 	}
 
-	dialInfo, err := mgo.ParseURL(mongoURL)
+	dialInfo, err := mgo.ParseURL(c.MongoURL)
 	if err != nil {
 		return fmt.Errorf("mongo URL is incorrect: %s", err)
 	}
@@ -76,38 +71,25 @@ func syncCmdRun(_ *cobra.Command, _ []string) error {
 	balanceStorage := mongo.NewBalanceStorage(session, true)
 
 	service := sync.NewSyncService(exchange, balanceStorage)
-	ticker := sync.NewSyncTicker(time.Second*time.Duration(period), service)
+	ticker := sync.NewSyncTicker(time.Second*time.Duration(c.SyncPeriod), service)
 	err = ticker.Start()
 	if err != nil {
 		return err
 	}
 	defer ticker.Stop()
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c,
+	exitC := make(chan os.Signal, 1)
+	signal.Notify(exitC,
 		syscall.SIGHUP,
 		syscall.SIGINT,
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
-	<-c
+	<-exitC
 	fmt.Println("Shutting down...")
 
 	return nil
 }
 
-func checkRequiredArgs() error {
-	if apiKey == "" {
-		apiKey = os.Getenv(envBittrexAPIKey)
-		if apiKey == "" {
-			return errors.New("--api-key argument or 'BITTREX_API_KEY' environment variable must be provided")
-		}
-	}
-
-	if apiSecret == "" {
-		apiSecret = os.Getenv(envBittrexAPISecret)
-		if apiSecret == "" {
-			return errors.New("--api-secret argument or 'BITTREX_API_SECRET' environment variable must be provided")
-		}
-	}
-	return nil
+func (c *SyncCommand) CheckArgs() error {
+	return c.APICommand.CheckArgs()
 }

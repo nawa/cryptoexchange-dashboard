@@ -1,15 +1,17 @@
 package exchange
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/nawa/cryptoexchange-wallet-info/sync/model"
 	"github.com/shopspring/decimal"
 	"github.com/toorop/go-bittrex"
+
+	"github.com/nawa/cryptoexchange-wallet-info/shared/model"
 )
 
 type BittrexExchange struct {
@@ -93,6 +95,26 @@ func (be *BittrexExchange) GetBalance() (*model.Balance, error) {
 	return result, nil
 }
 
+func (be *BittrexExchange) GetMarketInfo(market string) (*model.MarketInfo, error) {
+	marketSummary, err := be.bittrex.GetMarketSummary(market)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(marketSummary) == 0 {
+		return nil, errors.New("got empty marketSummary list")
+	}
+
+	return &model.MarketInfo{
+		MarketName: marketSummary[0].MarketName,
+		Last:       decToFloatQuiet(marketSummary[0].Last),
+		Bid:        decToFloatQuiet(marketSummary[0].Bid),
+		Ask:        decToFloatQuiet(marketSummary[0].Ask),
+		High:       decToFloatQuiet(marketSummary[0].High),
+		Low:        decToFloatQuiet(marketSummary[0].Low),
+	}, nil
+}
+
 func (be *BittrexExchange) updateMarketSummaries() (err error) {
 	be.marketSummaries, err = be.bittrex.GetMarketSummaries()
 	be.syncTime = time.Now().UTC()
@@ -142,4 +164,9 @@ func (be *BittrexExchange) marketRate(fromCurrency, toCurrency string) (float64,
 func (be *BittrexExchange) Ping() error {
 	_, err := be.bittrex.GetBalances()
 	return err
+}
+
+func decToFloatQuiet(dec decimal.Decimal) float64 {
+	f, _ := dec.Float64()
+	return f
 }
