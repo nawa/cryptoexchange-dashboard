@@ -12,7 +12,7 @@ type Balance struct {
 	Currency   string    `bson:"currency"`
 	Amount     float64   `bson:"amount"`
 	BTCAmount  float64   `bson:"btc_amount"`
+	USDTAmount float64   `bson:"usdt_amount"`
 	BTCRate    float64   `bson:"btc_rate"`
-	USDTAmount float64   `bson:"usdt_rate"`
 	Time       time.Time `bson:"time"`
 }

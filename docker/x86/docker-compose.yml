@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  sync:
+    hostname: sync
+    image: ${CRWI_IMAGENAME_X86}
+    restart: ${CRWI_RESTART_POLICY}
+    environment:
+      - EXCHANGE_API_KEY
+      - EXCHANGE_API_SECRET
+      - CRWI_ARGS=sync --period=$CRWI_SYNC_PERIOD --db-url=mongodb://mongo:27017/cryptoexchange-wallet
+    links:
+      - mongo
+  
+  mongo:
+    image: mongo:3.4
+    ports:
+      - 27017
+    volumes: 
+      - ${CRWI_MONGO_VOLUME_DB}:/data/db
+      - ${CRWI_MONGO_VOLUME_CONFIG}:/data/configdb

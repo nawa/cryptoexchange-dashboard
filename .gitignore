@@ -1,6 +1,7 @@
 # IDE related
 .idea/
 *.iml
-/cryptoexchange-wallet-info
+/docker/env
+/bin
 /debug
 /.vscode
