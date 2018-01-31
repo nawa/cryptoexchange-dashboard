@@ -10,10 +10,10 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/spf13/cobra"
 
-	"github.com/nawa/cryptoexchange-wallet-info/shared/exchange"
-	"github.com/nawa/cryptoexchange-wallet-info/shared/storage"
-	"github.com/nawa/cryptoexchange-wallet-info/shared/storage/mongo"
-	"github.com/nawa/cryptoexchange-wallet-info/sync"
+	"github.com/nawa/cryptoexchange-wallet-info/storage"
+	"github.com/nawa/cryptoexchange-wallet-info/storage/exchange"
+	"github.com/nawa/cryptoexchange-wallet-info/storage/mongo"
+	"github.com/nawa/cryptoexchange-wallet-info/usecase"
 )
 
 const DBTimeout = time.Second * 10
@@ -66,13 +66,12 @@ func (c *SyncCommand) run(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	service := sync.NewSyncService(exchange, balanceStorage)
-	ticker := sync.NewSyncTicker(time.Second*time.Duration(c.SyncPeriod), service)
-	err = ticker.Start()
+	balanceUsecase := usecase.NewBalanceUsecase(exchange, balanceStorage)
+	synchronizer, err := balanceUsecase.StartSyncFromExchangePeriodically(c.SyncPeriod)
 	if err != nil {
 		return err
 	}
-	defer ticker.Stop()
+	defer synchronizer.Stop()
 
 	exitC := make(chan os.Signal, 1)
 	signal.Notify(exitC,

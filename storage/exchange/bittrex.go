@@ -11,23 +11,24 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/toorop/go-bittrex"
 
-	"github.com/nawa/cryptoexchange-wallet-info/shared/model"
+	"github.com/nawa/cryptoexchange-wallet-info/model"
+	"github.com/nawa/cryptoexchange-wallet-info/storage"
 )
 
-type BittrexExchange struct {
+type bittrexExchange struct {
 	bittrex         *bittrex.Bittrex
 	marketSummaries []bittrex.MarketSummary
 	syncTime        time.Time
 }
 
-func NewBittrexExchange(apiKey, apiSecret string) *BittrexExchange {
+func NewBittrexExchange(apiKey, apiSecret string) storage.Exchange {
 	bittrex := bittrex.New(apiKey, apiSecret)
-	return &BittrexExchange{
+	return &bittrexExchange{
 		bittrex: bittrex,
 	}
 }
 
-func (be *BittrexExchange) GetBalance() (*model.Balance, error) {
+func (be *bittrexExchange) GetBalance() (*model.Balance, error) {
 	var (
 		balances []bittrex.Balance
 		errCh    = make(chan error, 2)
@@ -96,7 +97,7 @@ func (be *BittrexExchange) GetBalance() (*model.Balance, error) {
 	return result, nil
 }
 
-func (be *BittrexExchange) GetMarketInfo(market string) (*model.MarketInfo, error) {
+func (be *bittrexExchange) GetMarketInfo(market string) (*model.MarketInfo, error) {
 	marketSummary, err := be.bittrex.GetMarketSummary(market)
 	if err != nil {
 		return nil, err
@@ -116,25 +117,25 @@ func (be *BittrexExchange) GetMarketInfo(market string) (*model.MarketInfo, erro
 	}, nil
 }
 
-func (be *BittrexExchange) updateMarketSummaries() (err error) {
+func (be *bittrexExchange) updateMarketSummaries() (err error) {
 	be.marketSummaries, err = be.bittrex.GetMarketSummaries()
 	be.syncTime = time.Now().UTC()
 	return
 }
 
-func (be *BittrexExchange) convertToBTC(currency string, amount float64) (float64, error) {
+func (be *bittrexExchange) convertToBTC(currency string, amount float64) (float64, error) {
 	return be.convertCurrency(currency, "BTC", amount)
 }
 
-func (be *BittrexExchange) convertToUSDT(currency string, amount float64) (float64, error) {
+func (be *bittrexExchange) convertToUSDT(currency string, amount float64) (float64, error) {
 	return be.convertCurrency(currency, "USDT", amount)
 }
 
-func (be *BittrexExchange) btcRate(currency string) (float64, error) {
+func (be *bittrexExchange) btcRate(currency string) (float64, error) {
 	return be.marketRate(currency, "BTC")
 }
 
-func (be *BittrexExchange) convertCurrency(fromCurrency, toCurrency string, amount float64) (float64, error) {
+func (be *bittrexExchange) convertCurrency(fromCurrency, toCurrency string, amount float64) (float64, error) {
 	if fromCurrency == toCurrency {
 		return amount, nil
 	}
@@ -145,7 +146,7 @@ func (be *BittrexExchange) convertCurrency(fromCurrency, toCurrency string, amou
 	return amount * rate, nil
 }
 
-func (be *BittrexExchange) marketRate(fromCurrency, toCurrency string) (float64, error) {
+func (be *bittrexExchange) marketRate(fromCurrency, toCurrency string) (float64, error) {
 	if fromCurrency == toCurrency {
 		return 1, nil
 	}
@@ -162,7 +163,7 @@ func (be *BittrexExchange) marketRate(fromCurrency, toCurrency string) (float64,
 	return 0, fmt.Errorf("neither market '%s-%s' nor '%s-%s' found in markets", fromCurrency, toCurrency, toCurrency, fromCurrency)
 }
 
-func (be *BittrexExchange) Ping() error {
+func (be *bittrexExchange) Ping() error {
 	_, err := be.bittrex.GetBalances()
 	return err
 }

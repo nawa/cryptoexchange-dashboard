@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nawa/cryptoexchange-wallet-info/shared/model"
+	"github.com/nawa/cryptoexchange-wallet-info/model"
 
 	"github.com/spf13/cobra"
 )

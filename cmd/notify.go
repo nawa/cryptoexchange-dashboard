@@ -13,7 +13,8 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cobra"
 
-	"github.com/nawa/cryptoexchange-wallet-info/shared/exchange"
+	"github.com/nawa/cryptoexchange-wallet-info/storage"
+	"github.com/nawa/cryptoexchange-wallet-info/storage/exchange"
 )
 
 type NotifyCommand struct {
@@ -102,7 +103,7 @@ func (c *NotifyCommand) run(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
-func (c *NotifyCommand) checkMarketLastPrice(exchange exchange.Exchange) (*float64, error) {
+func (c *NotifyCommand) checkMarketLastPrice(exchange storage.Exchange) (*float64, error) {
 	marketInfo, err := exchange.GetMarketInfo(c.Market)
 	if err != nil {
 		return nil, err

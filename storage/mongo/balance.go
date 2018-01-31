@@ -4,7 +4,7 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 
-	"github.com/nawa/cryptoexchange-wallet-info/shared/storage"
+	"github.com/nawa/cryptoexchange-wallet-info/storage"
 )
 
 type balanceStorage struct {

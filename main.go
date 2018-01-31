@@ -6,4 +6,11 @@ import (
 
 func main() {
 	cmd.Execute()
+
+	//TODO remove me
+	// server := http.NewServer(8080)
+	// err := server.Start()
+	// if err != nil {
+	// 	panic(err)
+	// }
 }
