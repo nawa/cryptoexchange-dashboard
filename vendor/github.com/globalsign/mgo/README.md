@@ -11,7 +11,7 @@ Further PR's (with tests) are welcome, but please maintain backwards compatibili
 * Fixes attempting to authenticate before every query ([details](https://github.com/go-mgo/mgo/issues/254))
 * Removes bulk update / delete batch size limitations ([details](https://github.com/go-mgo/mgo/issues/288))
 * Adds native support for `time.Duration` marshalling ([details](https://github.com/go-mgo/mgo/pull/373))
-* Reduce memory footprint / garbage collection pressure by reusing buffers ([details](https://github.com/go-mgo/mgo/pull/229))
+* Reduce memory footprint / garbage collection pressure by reusing buffers ([details](https://github.com/go-mgo/mgo/pull/229), [more](https://github.com/globalsign/mgo/pull/56))
 * Support majority read concerns ([details](https://github.com/globalsign/mgo/pull/2))
 * Improved connection handling ([details](https://github.com/globalsign/mgo/pull/5))
 * Hides SASL warnings ([details](https://github.com/globalsign/mgo/pull/7))
@@ -32,10 +32,13 @@ Further PR's (with tests) are welcome, but please maintain backwards compatibili
 * GetBSON correctly handles structs with both fields and pointers ([details](https://github.com/globalsign/mgo/pull/40))
 * Improved bson.Raw unmarshalling performance ([details](https://github.com/globalsign/mgo/pull/49))
 * Minimise socket connection timeouts due to excessive locking ([details](https://github.com/globalsign/mgo/pull/52))
+* Natively support X509 client authentication ([details](https://github.com/globalsign/mgo/pull/55))
+* Gracefully recover from a temporarily unreachable server ([details](https://github.com/globalsign/mgo/pull/69))
 
 ---
 
 ### Thanks to
+* @bachue
 * @bozaro
 * @BenLubar
 * @carter2000
