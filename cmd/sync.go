@@ -5,9 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
-	"github.com/globalsign/mgo"
 	"github.com/spf13/cobra"
 
 	"github.com/nawa/cryptoexchange-wallet-info/storage"
@@ -16,12 +14,10 @@ import (
 	"github.com/nawa/cryptoexchange-wallet-info/usecase"
 )
 
-const DBTimeout = time.Second * 10
-
 type SyncCommand struct {
 	cobra.Command
 	APICommand
-	MongoURL   string
+	MongoCommand
 	SyncPeriod int
 }
 
@@ -36,27 +32,28 @@ var (
 )
 
 func init() {
-	syncCmd.APICommand.BindArgs(&syncCmd.Command)
-	syncCmd.Command.Flags().StringVarP(&syncCmd.MongoURL, "db-url", "u", "", "Url to MongoDB")
-	syncCmd.Command.Flags().IntVarP(&syncCmd.SyncPeriod, "period", "p", 10, "Synchronization period in sec")
-
-	err := syncCmd.MarkFlagRequired("db-url")
+	err := syncCmd.APICommand.BindArgs(&syncCmd.Command)
 	if err != nil {
 		panic(err)
 	}
+	err = syncCmd.MongoCommand.BindArgs(&syncCmd.Command)
+	if err != nil {
+		panic(err)
+	}
+	syncCmd.Command.Flags().IntVarP(&syncCmd.SyncPeriod, "period", "p", 10, "Synchronization period in sec")
 
+	syncCmd.PreRunE = syncCmd.preRun
 	syncCmd.RunE = syncCmd.run
 	rootCmd.AddCommand(&syncCmd.Command)
 }
 
-func (c *SyncCommand) run(_ *cobra.Command, _ []string) error {
-	err := c.CheckArgs()
-	if err != nil {
-		return err
-	}
+func (c *SyncCommand) preRun(_ *cobra.Command, _ []string) error {
+	return c.APICommand.CheckArgs()
+}
 
+func (c *SyncCommand) run(_ *cobra.Command, _ []string) error {
 	exchange := exchange.NewBittrexExchange(c.APIKey, c.APISecret)
-	err = exchange.Ping()
+	err := exchange.Ping()
 	if err != nil {
 		return fmt.Errorf("exchange error: %s", err)
 	}
@@ -86,20 +83,9 @@ func (c *SyncCommand) run(_ *cobra.Command, _ []string) error {
 }
 
 func (c *SyncCommand) createBalanceStorage() (storage.BalanceStorage, error) {
-	dialInfo, err := mgo.ParseURL(c.MongoURL)
-	dialInfo.Timeout = DBTimeout
+	session, err := c.CreateMongoSession()
 	if err != nil {
-		return nil, fmt.Errorf("mongo URL is incorrect: %s", err)
+		return nil, err
 	}
-
-	session, err := mgo.DialWithInfo(dialInfo)
-	if err != nil {
-		return nil, fmt.Errorf("can't connect to mongo: %s", err)
-	}
-
 	return mongo.NewBalanceStorage(session, true), nil
-}
-
-func (c *SyncCommand) CheckArgs() error {
-	return c.APICommand.CheckArgs()
 }

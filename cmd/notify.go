@@ -37,29 +37,50 @@ var (
 )
 
 func init() {
-	notifyCmd.APICommand.BindArgs(&notifyCmd.Command)
+	err := notifyCmd.APICommand.BindArgs(&notifyCmd.Command)
+	if err != nil {
+		panic(err)
+	}
 	notifyCmd.Command.Flags().IntVarP(&notifyCmd.RefreshPeriod, "period", "p", 10, "Refresh period in sec")
 	notifyCmd.Command.Flags().StringVarP(&notifyCmd.Market, "market", "m", "", "Market name, for example 'BTC-ETH'")
 	notifyCmd.Command.Flags().Float64Var(&notifyCmd.GreaterThan, "gt", 0, "Notify when price is greater than value")
 	notifyCmd.Command.Flags().Float64Var(&notifyCmd.LessThan, "lt", 0, "Notify when price is less than value")
 
-	err := notifyCmd.MarkFlagRequired("market")
+	err = notifyCmd.MarkFlagRequired("market")
 	if err != nil {
 		panic(err)
 	}
 
+	notifyCmd.PreRunE = notifyCmd.preRun
 	notifyCmd.RunE = notifyCmd.run
 	rootCmd.AddCommand(&notifyCmd.Command)
 }
 
-func (c *NotifyCommand) run(_ *cobra.Command, _ []string) error {
-	err := c.CheckArgs()
+func (c *NotifyCommand) preRun(_ *cobra.Command, _ []string) error {
+	err := c.APICommand.CheckArgs()
 	if err != nil {
 		return err
 	}
 
+	if c.GreaterThan == 0 && c.LessThan == 0 {
+		return errors.New("--gt or --lt must be defined")
+	}
+
+	if c.GreaterThan > 0 && c.LessThan > 0 {
+		return errors.New("only one of --gt or --lt must be defined")
+	}
+
+	if c.GreaterThan < 0 {
+		return errors.New("--gt must be (0, ∞)")
+	} else if c.LessThan < 0 {
+		return errors.New("--lt must be (0, ∞)")
+	}
+	return nil
+}
+
+func (c *NotifyCommand) run(_ *cobra.Command, _ []string) error {
 	exchange := exchange.NewBittrexExchange(c.APIKey, c.APISecret)
-	err = exchange.Ping()
+	err := exchange.Ping()
 	if err != nil {
 		return err
 	}
@@ -124,26 +145,4 @@ func (c *NotifyCommand) sendNotification(lastPrice float64) error {
 
 	msg := fmt.Sprintf("%s is reached price %s", notifyCmd.Market, decimal.NewFromFloat(lastPrice))
 	return notifier.Push("Coin price notifier", msg, "", notificator.UR_CRITICAL)
-}
-
-func (c *NotifyCommand) CheckArgs() error {
-	err := c.APICommand.CheckArgs()
-	if err != nil {
-		return err
-	}
-
-	if c.GreaterThan == 0 && c.LessThan == 0 {
-		return errors.New("--gt or --lt must be defined")
-	}
-
-	if c.GreaterThan > 0 && c.LessThan > 0 {
-		return errors.New("only one of --gt or --lt must be defined")
-	}
-
-	if c.GreaterThan < 0 {
-		return errors.New("--gt must be (0, ∞)")
-	} else if c.LessThan < 0 {
-		return errors.New("--lt must be (0, ∞)")
-	}
-	return nil
 }

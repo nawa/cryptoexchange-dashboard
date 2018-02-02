@@ -4,13 +4,17 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
+	"github.com/globalsign/mgo"
 	"github.com/nawa/cryptoexchange-wallet-info/model"
 
 	"github.com/spf13/cobra"
 )
 
 const (
+	DBTimeout = time.Second * 10
+
 	envExchangeAPIKey    = "EXCHANGE_API_KEY"
 	envExchangeAPISecret = "EXCHANGE_API_SECRET"
 )
@@ -21,10 +25,15 @@ type APICommand struct {
 	APISecret    string
 }
 
-func (c *APICommand) BindArgs(cobraCmd *cobra.Command) {
+type MongoCommand struct {
+	MongoURL string
+}
+
+func (c *APICommand) BindArgs(cobraCmd *cobra.Command) error {
 	cobraCmd.Flags().StringVarP(&c.ExchangeType, "exchange-type", "e", string(model.ExchangeTypeBittrex), fmt.Sprintf("Exchange type: [%s] (Only Bittrex is supported now)", model.ExchangeTypeBittrex))
 	cobraCmd.Flags().StringVarP(&c.APIKey, "api-key", "k", "", "API Key. Can be skipped and provided by environment variable EXCHANGE_API_KEY")
 	cobraCmd.Flags().StringVarP(&c.APISecret, "api-secret", "s", "", "API Secret. Can be skipped and provided by environment variable EXCHANGE_API_SECRET")
+	return nil
 }
 
 func (c *APICommand) CheckArgs() error {
@@ -46,4 +55,25 @@ func (c *APICommand) CheckArgs() error {
 		}
 	}
 	return nil
+}
+
+func (c *MongoCommand) BindArgs(cobraCmd *cobra.Command) error {
+	cobraCmd.Flags().StringVarP(&c.MongoURL, "db-url", "u", "", "Url to MongoDB")
+
+	return cobraCmd.MarkFlagRequired("db-url")
+}
+
+func (c *MongoCommand) CreateMongoSession() (*mgo.Session, error) {
+	dialInfo, err := mgo.ParseURL(c.MongoURL)
+	dialInfo.Timeout = DBTimeout
+	if err != nil {
+		return nil, fmt.Errorf("mongo URL is incorrect: %s", err)
+	}
+
+	session, err := mgo.DialWithInfo(dialInfo)
+	if err != nil {
+		return nil, fmt.Errorf("can't connect to mongo: %s", err)
+	}
+
+	return session, nil
 }

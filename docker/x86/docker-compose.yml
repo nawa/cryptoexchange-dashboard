@@ -15,7 +15,7 @@ services:
   mongo:
     image: mongo:3.4
     ports:
-      - 27017
+      - 28017:27017
     volumes: 
       - ${CRWI_MONGO_VOLUME_DB}:/data/db
       - ${CRWI_MONGO_VOLUME_CONFIG}:/data/configdb
