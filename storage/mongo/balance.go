@@ -1,6 +1,8 @@
 package mongo
 
 import (
+	"time"
+
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 
@@ -31,11 +33,21 @@ func (s *balanceStorage) Save(balances ...storage.Balance) error {
 	return db.C("balance").Insert(convert...)
 }
 
-func (s *balanceStorage) Find() (balance []storage.Balance, err error) {
+func (s *balanceStorage) FetchDaily(currency string) (balance []storage.Balance, err error) {
 	db, closeSession := s.getDB()
 	defer closeSession()
 
-	q := bson.M{}
-	err = db.C("balance").Find(q).All(&balance)
+	period := time.Now().Add(-1 * time.Hour * 24)
+
+	q := bson.M{
+		"time": bson.M{
+			"$gte": period,
+		},
+		"currency": currency,
+	}
+	err = db.C("balance").
+		Find(q).
+		Sort("-time").
+		All(&balance)
 	return
 }

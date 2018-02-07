@@ -10,6 +10,7 @@ type CurrencyBalance struct {
 	BTCAmount  float64
 	BTCRate    float64
 	USDTAmount float64
+	Time       time.Time
 }
 
 type Balance struct {

@@ -95,7 +95,7 @@
   branch = "master"
   name = "github.com/json-iterator/go"
   packages = ["."]
-  revision = "bca911dae0735b8220ddb30236e11cff9d959f19"
+  revision = "002b5ae34214fdc0bad508c2ed6f572fa96dfdda"
 
 [[projects]]
   branch = "master"
@@ -112,8 +112,8 @@
 [[projects]]
   name = "github.com/kataras/iris"
   packages = [".","cache","cache/cfg","cache/client","cache/client/rule","cache/entry","cache/ruleset","cache/uri","context","core/errors","core/handlerconv","core/host","core/maintenance","core/maintenance/client","core/maintenance/encoding","core/maintenance/version","core/memstore","core/netutil","core/router","core/router/macro","core/router/macro/interpreter/ast","core/router/macro/interpreter/lexer","core/router/macro/interpreter/parser","core/router/macro/interpreter/token","core/router/node","hero","hero/di","middleware/logger","middleware/recover","mvc","sessions","view"]
-  revision = "8be504fe1304c9c2dfdbc805b55f740d4c0a8acf"
-  version = "v10.0.2"
+  revision = "22ab100034e505bb3bbeeee984eafab1d56303c6"
+  version = "v10.1.0"
 
 [[projects]]
   branch = "master"
@@ -232,13 +232,13 @@
   branch = "master"
   name = "golang.org/x/net"
   packages = ["html","html/atom"]
-  revision = "0ed95abb35c445290478a5348a7b38bb154135fd"
+  revision = "2fb46b16b8dda405028c50f7c7f0f9dd1fa6bfb1"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
-  revision = "3dbebcf8efb6a5011a60c2b4591c1022a759af8a"
+  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
 
 [[projects]]
   branch = "v2"
@@ -249,6 +249,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b79e174a961ee6f47a3d84efc332782452dcccda0b5fb8dc9cfbf23f981ab734"
+  inputs-digest = "b49a216c672a5803ca04865776940b7b88cef4dce51f0b8155fabad80d7aebd4"
   solver-name = "gps-cdcl"
   solver-version = 1

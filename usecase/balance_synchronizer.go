@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 )
 
 const DefaultSyncTickerPeriod = time.Second
@@ -13,12 +13,15 @@ type BalanceSynchronizer struct {
 	period         time.Duration
 	timeTicker     *time.Ticker
 	balanceUsecase BalanceUsecase
+	log            *logrus.Entry
 }
 
-func newSyncTicker(period time.Duration, balanceUsecase BalanceUsecase) *BalanceSynchronizer {
+func newBalanceSynchronizer(period time.Duration, balanceUsecase BalanceUsecase) *BalanceSynchronizer {
+	log := logrus.WithField("component", "balanceSynchronizer")
 	return &BalanceSynchronizer{
 		period:         period,
 		balanceUsecase: balanceUsecase,
+		log:            log,
 	}
 }
 
@@ -31,7 +34,7 @@ func (s *BalanceSynchronizer) start() error {
 		for range ticker.C {
 			err := s.balanceUsecase.SyncFromExchange()
 			if err != nil {
-				log.Error(err)
+				s.log.WithField("method", "start.ticker").WithError(err).Error()
 			}
 		}
 	}()

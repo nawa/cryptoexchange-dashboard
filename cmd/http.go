@@ -41,9 +41,14 @@ func init() {
 }
 
 func (c *HTTPCommand) run(_ *cobra.Command, _ []string) error {
+	balanceStorage, err := c.CreateBalanceStorage()
+	if err != nil {
+		return err
+	}
+
 	ctx, ctxCancel := context.WithCancel(context.Background())
 
-	server := http.NewServer(ctx, httpCmd.HTTPAddress)
+	server := http.NewServer(ctx, httpCmd.HTTPAddress, balanceStorage)
 
 	go func() {
 		defer ctxCancel()

@@ -8,6 +8,8 @@ import (
 
 	"github.com/globalsign/mgo"
 	"github.com/nawa/cryptoexchange-wallet-info/model"
+	"github.com/nawa/cryptoexchange-wallet-info/storage"
+	"github.com/nawa/cryptoexchange-wallet-info/storage/mongo"
 
 	"github.com/spf13/cobra"
 )
@@ -63,7 +65,7 @@ func (c *MongoCommand) BindArgs(cobraCmd *cobra.Command) error {
 	return cobraCmd.MarkFlagRequired("db-url")
 }
 
-func (c *MongoCommand) CreateMongoSession() (*mgo.Session, error) {
+func (c *MongoCommand) createMongoSession() (*mgo.Session, error) {
 	dialInfo, err := mgo.ParseURL(c.MongoURL)
 	dialInfo.Timeout = DBTimeout
 	if err != nil {
@@ -76,4 +78,12 @@ func (c *MongoCommand) CreateMongoSession() (*mgo.Session, error) {
 	}
 
 	return session, nil
+}
+
+func (c *MongoCommand) CreateBalanceStorage() (storage.BalanceStorage, error) {
+	session, err := c.createMongoSession()
+	if err != nil {
+		return nil, err
+	}
+	return mongo.NewBalanceStorage(session, true), nil
 }

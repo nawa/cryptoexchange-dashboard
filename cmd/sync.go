@@ -8,9 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/nawa/cryptoexchange-wallet-info/storage"
 	"github.com/nawa/cryptoexchange-wallet-info/storage/exchange"
-	"github.com/nawa/cryptoexchange-wallet-info/storage/mongo"
 	"github.com/nawa/cryptoexchange-wallet-info/usecase"
 )
 
@@ -58,7 +56,7 @@ func (c *SyncCommand) run(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("exchange error: %s", err)
 	}
 
-	balanceStorage, err := c.createBalanceStorage()
+	balanceStorage, err := c.CreateBalanceStorage()
 	if err != nil {
 		return err
 	}
@@ -80,12 +78,4 @@ func (c *SyncCommand) run(_ *cobra.Command, _ []string) error {
 	fmt.Println("Shutting down...")
 
 	return nil
-}
-
-func (c *SyncCommand) createBalanceStorage() (storage.BalanceStorage, error) {
-	session, err := c.CreateMongoSession()
-	if err != nil {
-		return nil, err
-	}
-	return mongo.NewBalanceStorage(session, true), nil
 }

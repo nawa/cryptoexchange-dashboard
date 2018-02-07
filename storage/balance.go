@@ -8,7 +8,7 @@ import (
 
 type BalanceStorage interface {
 	Save(balances ...Balance) error
-	Find() ([]Balance, error)
+	FetchDaily(currency string) ([]Balance, error)
 }
 
 type Balance struct {
@@ -44,4 +44,15 @@ func NewBalances(b *model.Balance) (result []Balance) {
 		})
 	}
 	return result
+}
+
+func (b *Balance) ToModel() *model.CurrencyBalance {
+	return &model.CurrencyBalance{
+		Currency:   b.Currency,
+		Amount:     b.Amount,
+		BTCAmount:  b.BTCAmount,
+		BTCRate:    b.BTCRate,
+		USDTAmount: b.USDTAmount,
+		Time:       b.Time,
+	}
 }
