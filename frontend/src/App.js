@@ -1,61 +1,101 @@
 import React, { Component } from 'react';
 import ExchangeChart from './ExchangeChart'; 
-import logo from './logo.svg';
-import './App.css';
-
-const chartData = [
-  { name: 1, cost: 4.11, impression: 100 },
-  { name: 2, cost: 2.39, impression: 120 },
-  { name: 3, cost: 1.37, impression: 150 },
-  { name: 4, cost: 1.16, impression: 180 },
-  { name: 5, cost: 2.29, impression: 200 },
-  { name: 6, cost: 3, impression: 499 },
-  { name: 7, cost: 0.53, impression: 50 },
-  { name: 8, cost: 2.52, impression: 100 },
-  { name: 9, cost: 1.79, impression: 200 },
-  { name: 10, cost: 2.94, impression: 222},
-  { name: 11, cost: 4.3, impression: 210 },
-  { name: 12, cost: 4.41, impression: 300 },
-  { name: 13, cost: 2.1, impression: 50 },
-  { name: 14, cost: 8, impression: 190 },
-  { name: 15, cost: 0, impression: 300 },
-  { name: 16, cost: 9, impression: 400 },
-  { name: 17, cost: 3, impression: 200 },
-  { name: 18, cost: 2, impression: 50 },
-  { name: 19, cost: 3, impression: 100 },
-  { name: 20, cost: 7, impression: 100 }
-];
-
-var counter = 1;
+import {Navbar, NavbarBrand, Nav, NavItem, NavLink, TabPane, TabContent} from 'reactstrap';
+import classnames from 'classnames';
+import config from "./config.json";
+import { MoonLoader } from 'halogenium';
 
 class App extends Component {
+  constructor(props) {
+    super(props);
+
+    this.toggle = this.toggle.bind(this);
+    this.currencies = []
+    this.state = {
+      activeTab: 'total',
+      loading: true
+    };
+  }
+
+  toggle(tab) {
+    if (this.state.activeTab !== tab) {
+      this.setState({
+        activeTab: tab
+      });
+    }
+  }
+
+  componentWillMount() {
+    return fetch(config.backend + "/balance/active", {
+      method: 'GET'
+    })
+      .then((response) => response.json())
+      .then((responseJson) => {
+        this.currencies = Object.entries(responseJson)
+          .sort((a, b) => {
+            return b[1][0].btc - a[1][0].btc
+          })
+          .filter((a) => a[0] !== "total")
+          .map((a) => a[0])
+
+        this.setState(() => ({
+          loading: false
+        }));
+      })
+      .catch((err) => {
+        alert(err)
+      })
+  }
+
   render() {
     return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Welcome to React</h1>
-        </header>
-        <p className="App-intro">
-          <ExchangeChart 
-            ref={
-              function (chart) {
-                setInterval(() => {
-                  // fetch
-                  const data = chartData.map((row) => {
-                    return {
-                      name: row.name,
-                      cost: row.cost * counter,
-                      impression: row.impression
-                    }
-                  })
-                  counter++
-                  chart.updateData(data);
-                }, 2000)
-              }
-            }
-          />
-        </p>
+      <div>
+        <Navbar color="dark" dark>
+          <NavbarBrand href="/">CryptoExchange Wallet Info</NavbarBrand>
+          <Nav className="navbar-nav">
+            <NavItem>
+              <NavLink href="https://github.com/">Github</NavLink>
+            </NavItem>
+          </Nav>
+        </Navbar>
+        {
+          (this.state.loading) 
+            ?
+            <MoonLoader color="#26A65B" size="64px" margin="4px" style={{position: "absolute", left: "50%", top: "50%"}}/>
+            :
+            <div>
+              <Nav tabs>
+                <NavItem style={{cursor: "pointer"}}>
+                  <NavLink
+                    className={classnames({ active: this.state.activeTab === 'total' })}
+                    onClick={() => { this.toggle('total'); }}
+                  >
+                    BTC Total
+                  </NavLink>
+                </NavItem>
+                {this.currencies.map((item, index) => (
+                  <NavItem style={{cursor: "pointer"}}>
+                    <NavLink
+                      className={classnames({ active: this.state.activeTab === item })}
+                      onClick={() => { this.toggle(item); }}
+                    >
+                      {item}
+                    </NavLink>
+                  </NavItem>
+                ))}
+              </Nav>
+              <TabContent activeTab={this.state.activeTab}>
+                <TabPane tabId="total">
+                  <ExchangeChart currency="total" title="BTC Total"/>
+                </TabPane>
+                {this.currencies.map((item, index) => (
+                  <TabPane tabId={item}>
+                    <ExchangeChart currency={item} title={item}/>
+                  </TabPane>
+                ))}
+              </TabContent>
+            </div>
+        }
       </div>
     );
   }

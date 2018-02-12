@@ -4,14 +4,14 @@ import (
 	"context"
 	"time"
 
+	"github.com/nawa/cryptoexchange-wallet-info/http/handler"
 	"github.com/nawa/cryptoexchange-wallet-info/storage"
 	"github.com/nawa/cryptoexchange-wallet-info/usecase"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/iris-contrib/middleware/cors"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/middleware/recover"
-
-	"github.com/nawa/cryptoexchange-wallet-info/http/handler"
 )
 
 type Server struct {
@@ -32,7 +32,17 @@ func NewServer(ctx context.Context, address string, balanceStorage storage.Balan
 	app.Get("ping", baseHandler.Ping)
 
 	balanceGroup := app.Party("/balance")
-	balanceGroup.Get("/daily", balanceHandler.Daily)
+	crs := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowCredentials: true,
+	})
+	balanceGroup.Use(crs)
+	balanceGroup.Get("/period/hourly/{hours:int}", balanceHandler.Hourly)
+	balanceGroup.Get("/period/weekly", balanceHandler.Weekly)
+	balanceGroup.Get("/period/monthly", balanceHandler.Monthly)
+	balanceGroup.Get("/period/all", balanceHandler.All)
+
+	balanceGroup.Get("/active", balanceHandler.ActiveCurrencies)
 
 	server := &Server{
 		addr: address,

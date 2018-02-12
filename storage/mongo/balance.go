@@ -33,11 +33,11 @@ func (s *balanceStorage) Save(balances ...storage.Balance) error {
 	return db.C("balance").Insert(convert...)
 }
 
-func (s *balanceStorage) FetchDaily(currency string) (balance []storage.Balance, err error) {
+func (s *balanceStorage) FetchHourly(currency string, hours int) (balance []storage.Balance, err error) {
 	db, closeSession := s.getDB()
 	defer closeSession()
 
-	period := time.Now().Add(-1 * time.Hour * 24)
+	period := time.Now().Add(-1 * time.Hour * time.Duration(hours))
 
 	q := bson.M{
 		"time": bson.M{
@@ -49,5 +49,180 @@ func (s *balanceStorage) FetchDaily(currency string) (balance []storage.Balance,
 		Find(q).
 		Sort("-time").
 		All(&balance)
+	return
+}
+
+func (s *balanceStorage) FetchWeekly(currency string) (balance []storage.Balance, err error) {
+	db, closeSession := s.getDB()
+	defer closeSession()
+
+	// 	db.balance.aggregate(
+	//     {
+	//         $match: {
+	//             "time": {
+	//                 $gte: new Date((new Date().getTime() - (7 * 24 * 60 * 60 * 1000)))
+	//             },
+	//             "currency": "total"
+	//         }
+	//     },
+	//     {
+	//         $group: {
+	//             "_id" : {
+	//                 "year": {"$year":"$time"}, "month": {"$month":"$time"}, "day": {"$dayOfMonth":"$time"}, "hour": {"$hour":"$time"},
+	//                 "each_5min": {
+	//                     "$subtract": [
+	//                         { "$minute": "$time" },
+	//                         { "$mod": [{ "$minute": "$time"}, 5] }
+	//                     ]
+	//                 }
+	//             },
+	//             "total": {$sum: 1},
+	//             "time": {$first: "$time"},
+	//             "amount": {$first: "$amount"},
+	//             "btc_amount": {$first: "$btc_amount"},
+	//             "usdt_amount": {$first: "$usdt_amount"}
+	//         }
+	//     },
+	//     { $sort : { time : -1}}
+	// )
+
+	period := time.Now().Add(-1 * time.Hour * 24 * 7)
+
+	pipe := db.C("balance").Pipe([]bson.M{
+		bson.M{
+			"$match": bson.M{
+				"time": bson.M{
+					"$gte": period,
+				},
+				"currency": currency,
+			},
+		},
+		bson.M{
+			"$group": bson.M{
+				"_id": bson.M{
+					"year":  bson.M{"$year": "$time"},
+					"month": bson.M{"$month": "$time"},
+					"day":   bson.M{"$dayOfMonth": "$time"},
+					"hour":  bson.M{"$hour": "$time"},
+					"each_5min": bson.M{
+						"$subtract": []bson.M{
+							bson.M{"$minute": "$time"},
+							bson.M{"$mod": []interface{}{bson.M{"$minute": "$time"}, 5}},
+						},
+					},
+				},
+				"time":        bson.M{"$first": "$time"},
+				"amount":      bson.M{"$first": "$amount"},
+				"btc_amount":  bson.M{"$first": "$btc_amount"},
+				"usdt_amount": bson.M{"$first": "$usdt_amount"},
+			},
+		},
+		bson.M{"$sort": bson.M{"time": -1}},
+	})
+
+	err = pipe.
+		All(&balance)
+
+	return
+}
+
+func (s *balanceStorage) FetchMonthly(currency string) (balance []storage.Balance, err error) {
+	db, closeSession := s.getDB()
+	defer closeSession()
+
+	// 	db.balance.aggregate(
+	//     {
+	//         $match: {
+	//             "time": {
+	//                 $gte: new Date((new Date().getTime() - (30 * 24 * 60 * 60 * 1000)))
+	//             },
+	//             "currency": "total"
+	//         }
+	//     },
+	//     {
+	//         $group: {
+	//             "_id" : {
+	//                 "year": {"$year":"$time"}, "month": {"$month":"$time"}, "day": {"$dayOfMonth":"$time"}, "hour": {"$hour":"$time"}
+	//             },
+	//             "total": {$sum: 1},
+	//             "time": {$first: "$time"},
+	//             "amount": {$first: "$amount"},
+	//             "btc_amount": {$first: "$btc_amount"},
+	//             "usdt_amount": {$first: "$usdt_amount"}
+	//         }
+	//     },
+	//     { $sort : { time : -1}}
+	// )
+
+	period := time.Now().Add(-1 * time.Hour * 24 * 30)
+
+	pipe := db.C("balance").Pipe([]bson.M{
+		bson.M{
+			"$match": bson.M{
+				"time": bson.M{
+					"$gte": period,
+				},
+				"currency": currency,
+			},
+		},
+		bson.M{
+			"$group": bson.M{
+				"_id": bson.M{
+					"year":  bson.M{"$year": "$time"},
+					"month": bson.M{"$month": "$time"},
+					"day":   bson.M{"$dayOfMonth": "$time"},
+					"hour":  bson.M{"$hour": "$time"},
+				},
+				"time":        bson.M{"$first": "$time"},
+				"amount":      bson.M{"$first": "$amount"},
+				"btc_amount":  bson.M{"$first": "$btc_amount"},
+				"usdt_amount": bson.M{"$first": "$usdt_amount"},
+			},
+		},
+		bson.M{"$sort": bson.M{"time": -1}},
+	})
+
+	err = pipe.
+		All(&balance)
+
+	return
+}
+
+func (s *balanceStorage) FetchAll(currency string) (balance []storage.Balance, err error) {
+	panic("not implemented")
+}
+
+func (s *balanceStorage) GetActiveCurrencies() (balance []storage.Balance, err error) {
+	//TODO make in one call to mongo
+	db, closeSession := s.getDB()
+	defer closeSession()
+
+	type lastTime struct {
+		Time time.Time `bson:"time"`
+	}
+	var t []lastTime
+
+	err = db.C("balance").
+		Find(bson.M{}).
+		Sort("-time").
+		Limit(1).
+		All(&t)
+
+	if err != nil {
+		return
+	}
+
+	if len(t) == 0 {
+		return
+	}
+
+	q := bson.M{
+		"time": t[0].Time,
+	}
+
+	err = db.C("balance").
+		Find(q).
+		All(&balance)
+
 	return
 }

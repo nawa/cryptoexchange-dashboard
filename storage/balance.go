@@ -8,7 +8,11 @@ import (
 
 type BalanceStorage interface {
 	Save(balances ...Balance) error
-	FetchDaily(currency string) ([]Balance, error)
+	FetchHourly(currency string, hours int) ([]Balance, error)
+	FetchWeekly(currency string) ([]Balance, error)
+	FetchMonthly(currency string) ([]Balance, error)
+	FetchAll(currency string) ([]Balance, error)
+	GetActiveCurrencies() ([]Balance, error)
 }
 
 type Balance struct {

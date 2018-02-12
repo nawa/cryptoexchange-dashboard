@@ -3,9 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "bootstrap": "4",
+    "halogenium": "^2.2.3",
+    "moment": "^2.20.1",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-scripts": "1.1.0",
+    "reactstrap": "^5.0.0-beta",
     "recharts": "^1.0.0-beta.9"
   },
   "scripts": {

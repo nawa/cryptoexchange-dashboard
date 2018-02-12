@@ -92,6 +92,12 @@
   revision = "ad9fb86c356f971f30319c40ddbdcf72129a2791"
 
 [[projects]]
+  name = "github.com/iris-contrib/middleware"
+  packages = ["cors"]
+  revision = "1060fbb0ce08a72c50c612e8e5bdc8076c28343d"
+  version = "v10"
+
+[[projects]]
   branch = "master"
   name = "github.com/json-iterator/go"
   packages = ["."]
@@ -112,8 +118,8 @@
 [[projects]]
   name = "github.com/kataras/iris"
   packages = [".","cache","cache/cfg","cache/client","cache/client/rule","cache/entry","cache/ruleset","cache/uri","context","core/errors","core/handlerconv","core/host","core/maintenance","core/maintenance/client","core/maintenance/encoding","core/maintenance/version","core/memstore","core/netutil","core/router","core/router/macro","core/router/macro/interpreter/ast","core/router/macro/interpreter/lexer","core/router/macro/interpreter/parser","core/router/macro/interpreter/token","core/router/node","hero","hero/di","middleware/logger","middleware/recover","mvc","sessions","view"]
-  revision = "22ab100034e505bb3bbeeee984eafab1d56303c6"
-  version = "v10.1.0"
+  revision = "2546d8bca00d42e7dbcc63d8dbbcfc0735808600"
+  version = "v10.2.0"
 
 [[projects]]
   branch = "master"
@@ -170,10 +176,10 @@
   revision = "542fd4642604d0d0c26112396ce5b1a9d01eee0b"
 
 [[projects]]
-  name = "github.com/russross/blackfriday"
+  name = "github.com/rs/cors"
   packages = ["."]
-  revision = "cadec560ec52d93835bf2f15bd794700d3a2473b"
-  version = "v2.0.0"
+  revision = "7af7a1e09ba336d2ea14b1ce73bf693c6837dbf6"
+  version = "v1.2"
 
 [[projects]]
   branch = "master"
@@ -226,19 +232,25 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["acme","acme/autocert","ssh/terminal"]
-  revision = "1875d0a70c90e57f11972aefd42276df65e895b9"
+  revision = "9de5f2eaf759b4c4550b3db39fed2e9e5f86f45c"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = ["html","html/atom"]
-  revision = "2fb46b16b8dda405028c50f7c7f0f9dd1fa6bfb1"
+  revision = "f5dfe339be1d06f81b22525fe34671ee7d2c8904"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
   revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
+
+[[projects]]
+  branch = "v2"
+  name = "gopkg.in/russross/blackfriday.v2"
+  packages = ["."]
+  revision = "119f356b88f847465545338f0108347453ae0b03"
 
 [[projects]]
   branch = "v2"
@@ -249,6 +261,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b49a216c672a5803ca04865776940b7b88cef4dce51f0b8155fabad80d7aebd4"
+  inputs-digest = "8d2aac43ff247200648ef510f9cf3bd36da7725a539de9dcf4d919529afbdd9c"
   solver-name = "gps-cdcl"
   solver-version = 1

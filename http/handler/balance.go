@@ -16,30 +16,136 @@ func NewBalanceHandler(balanceUsecase usecase.BalanceUsecase) *BalanceHandler {
 	}
 }
 
-func (h *BalanceHandler) Daily(ctx iris.Context) {
+func (h *BalanceHandler) Hourly(ctx iris.Context) {
+	hours, err := ctx.Params().GetInt("hours")
+	if err != nil {
+		WriteBadRequest(ctx, "':hours' is wrong")
+		return
+	}
+	if hours <= 0 {
+		WriteBadRequest(ctx, "':hours' is <= 0")
+		return
+	}
+
 	currency := ctx.URLParam("currency")
 	if currency == "" {
 		WriteBadRequest(ctx, "'currency' is empty")
 		return
 	}
 
-	mBalances, err := h.balanceUsecase.FetchDaily(currency)
+	mBalances, err := h.balanceUsecase.FetchHourly(currency, hours)
 	if err != nil {
 		WriteInternalServerError(ctx, "internal error")
 		return
 	}
 
-	var balances []dto.BalanceDTO
+	curBalancesDTO := []dto.CurrencyBalanceDTO{}
 	for _, b := range mBalances {
-		balances = append(balances, *dto.NewBalanceDTO(b))
+		curBalancesDTO = append(curBalancesDTO, *dto.NewBalanceDTO(b))
 	}
 
-	if len(balances) == 0 {
-		//without this transformation json will equal to "null", but "[]" is expected
-		balances = make([]dto.BalanceDTO, 0)
+	balanceDTO := dto.BalanceDTO{}
+	balanceDTO.Add(currency, curBalancesDTO...)
+
+	_, err = ctx.JSON(balanceDTO)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (h *BalanceHandler) Weekly(ctx iris.Context) {
+	currency := ctx.URLParam("currency")
+	if currency == "" {
+		WriteBadRequest(ctx, "'currency' is empty")
+		return
 	}
 
-	_, err = ctx.JSON(balances)
+	mBalances, err := h.balanceUsecase.FetchWeekly(currency)
+	if err != nil {
+		WriteInternalServerError(ctx, "internal error")
+		return
+	}
+
+	curBalancesDTO := []dto.CurrencyBalanceDTO{}
+	for _, b := range mBalances {
+		curBalancesDTO = append(curBalancesDTO, *dto.NewBalanceDTO(b))
+	}
+
+	balanceDTO := dto.BalanceDTO{}
+	balanceDTO.Add(currency, curBalancesDTO...)
+
+	_, err = ctx.JSON(balanceDTO)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (h *BalanceHandler) Monthly(ctx iris.Context) {
+	currency := ctx.URLParam("currency")
+	if currency == "" {
+		WriteBadRequest(ctx, "'currency' is empty")
+		return
+	}
+
+	mBalances, err := h.balanceUsecase.FetchMonthly(currency)
+	if err != nil {
+		WriteInternalServerError(ctx, "internal error")
+		return
+	}
+
+	curBalancesDTO := []dto.CurrencyBalanceDTO{}
+	for _, b := range mBalances {
+		curBalancesDTO = append(curBalancesDTO, *dto.NewBalanceDTO(b))
+	}
+
+	balanceDTO := dto.BalanceDTO{}
+	balanceDTO.Add(currency, curBalancesDTO...)
+
+	_, err = ctx.JSON(balanceDTO)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (h *BalanceHandler) All(ctx iris.Context) {
+	currency := ctx.URLParam("currency")
+	if currency == "" {
+		WriteBadRequest(ctx, "'currency' is empty")
+		return
+	}
+
+	mBalances, err := h.balanceUsecase.FetchAll(currency)
+	if err != nil {
+		WriteInternalServerError(ctx, "internal error")
+		return
+	}
+
+	curBalancesDTO := []dto.CurrencyBalanceDTO{}
+	for _, b := range mBalances {
+		curBalancesDTO = append(curBalancesDTO, *dto.NewBalanceDTO(b))
+	}
+
+	balanceDTO := dto.BalanceDTO{}
+	balanceDTO.Add(currency, curBalancesDTO...)
+
+	_, err = ctx.JSON(balanceDTO)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (h *BalanceHandler) ActiveCurrencies(ctx iris.Context) {
+	mBalances, err := h.balanceUsecase.GetActiveCurrencies()
+	if err != nil {
+		WriteInternalServerError(ctx, "internal error")
+		return
+	}
+
+	balanceDTO := dto.BalanceDTO{}
+	for _, b := range mBalances {
+		balanceDTO.Add(b.Currency, *dto.NewBalanceDTO(b))
+	}
+	_, err = ctx.JSON(balanceDTO)
 	if err != nil {
 		panic(err)
 	}

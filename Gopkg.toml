@@ -47,8 +47,12 @@
 
 [[constraint]]
   name = "github.com/kataras/iris"
-  version = "10.1.0"
+  version = "10.2.0"
 
 [[override]]
   name = "github.com/satori/go.uuid"
   revision = "5bf94b69c6b68ee1b541973bb8e1144db23a194b"
+
+[[constraint]]
+  name = "github.com/iris-contrib/middleware"
+  version = "v10"
