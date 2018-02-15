@@ -2,5 +2,6 @@
   "Exclude": [
     "should have comment.*or be unexported",
     "cmd/sync.go.*Potential hardcoded credentials"
-  ]
+  ],
+  "Deadline" : "1m"
 }

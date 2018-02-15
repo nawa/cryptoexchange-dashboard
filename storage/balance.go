@@ -7,6 +7,8 @@ import (
 )
 
 type BalanceStorage interface {
+	// Init inits the storage, such as prepares indexes and another
+	Init() error
 	Save(balances ...Balance) error
 	FetchHourly(currency string, hours int) ([]Balance, error)
 	FetchWeekly(currency string) ([]Balance, error)

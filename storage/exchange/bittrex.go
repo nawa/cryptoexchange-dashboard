@@ -4,58 +4,56 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
-
-	"github.com/hashicorp/go-multierror"
-	"github.com/shopspring/decimal"
-	"github.com/toorop/go-bittrex"
 
 	"github.com/nawa/cryptoexchange-wallet-info/model"
 	"github.com/nawa/cryptoexchange-wallet-info/storage"
+	"github.com/nawa/cryptoexchange-wallet-info/utils"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/hashicorp/go-multierror"
+	"github.com/shopspring/decimal"
+	"github.com/toorop/go-bittrex"
 )
 
 type bittrexExchange struct {
-	bittrex         *bittrex.Bittrex
+	bittrex *bittrex.Bittrex
+	log     *logrus.Entry
+}
+
+type currencyConverter struct {
 	marketSummaries []bittrex.MarketSummary
 	syncTime        time.Time
 }
 
 func NewBittrexExchange(apiKey, apiSecret string) storage.Exchange {
+	log := logrus.WithField("component", "BittrexExchange")
 	bittrex := bittrex.New(apiKey, apiSecret)
 	return &bittrexExchange{
 		bittrex: bittrex,
+		log:     log,
 	}
 }
 
 func (be *bittrexExchange) GetBalance() (*model.Balance, error) {
 	var (
-		balances []bittrex.Balance
-		errCh    = make(chan error, 2)
+		balances  []bittrex.Balance
+		converter *currencyConverter
 	)
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		err := be.updateMarketSummaries()
-		if err != nil {
-			errCh <- err
-		}
-	}()
-	go func() {
-		defer wg.Done()
-		var err error
-		balances, err = be.bittrex.GetBalances()
-		if err != nil {
-			errCh <- err
-		}
-	}()
 
-	wg.Wait()
-	close(errCh)
+	errs := utils.ExecuteConcurrently([]func() error{
+		func() (err error) {
+			converter, err = be.createCurrencyConverter()
+			return
+		},
+		func() (err error) {
+			balances, err = be.bittrex.GetBalances()
+			return
+		},
+	})
 
 	var err error
-	for e := range errCh {
+	for _, e := range errs {
 		err = multierror.Append(err, e)
 	}
 
@@ -67,21 +65,21 @@ func (be *bittrexExchange) GetBalance() (*model.Balance, error) {
 	for _, b := range balances {
 		balance, _ := b.Balance.Float64()
 		if balance > 0 {
-			btcBalance, err := be.convertToBTC(b.Currency, balance)
+			btcBalance, err := converter.ConvertToBTC(b.Currency, balance)
 			if err != nil {
 				return nil, err
 			}
-			usdtBalance, err := be.convertToUSDT("BTC", btcBalance)
+			usdtBalance, err := converter.ConvertToUSDT("BTC", btcBalance)
 			if err != nil {
 				return nil, err
 			}
-			btcRate, err := be.btcRate(b.Currency)
+			btcRate, err := converter.BtcRate(b.Currency)
 			if err != nil {
 				return nil, err
 			}
 
 			result.Exchange = model.ExchangeTypeBittrex
-			result.Time = be.syncTime
+			result.Time = converter.syncTime
 			result.Currencies = append(result.Currencies,
 				model.CurrencyBalance{
 					Currency:   b.Currency,
@@ -117,55 +115,144 @@ func (be *bittrexExchange) GetMarketInfo(market string) (*model.MarketInfo, erro
 	}, nil
 }
 
-func (be *bittrexExchange) updateMarketSummaries() (err error) {
-	be.marketSummaries, err = be.bittrex.GetMarketSummaries()
-	be.syncTime = time.Now().UTC()
-	return
-}
+func (be *bittrexExchange) GetOrders() ([]model.Order, error) {
+	var (
+		orders    []bittrex.Order
+		converter *currencyConverter
+	)
 
-func (be *bittrexExchange) convertToBTC(currency string, amount float64) (float64, error) {
-	return be.convertCurrency(currency, "BTC", amount)
-}
+	errs := utils.ExecuteConcurrently([]func() error{
+		func() (err error) {
+			converter, err = be.createCurrencyConverter()
+			return
+		},
+		func() (err error) {
+			orders, err = be.bittrex.GetOrderHistory("all")
+			return
+		},
+	})
 
-func (be *bittrexExchange) convertToUSDT(currency string, amount float64) (float64, error) {
-	return be.convertCurrency(currency, "USDT", amount)
-}
-
-func (be *bittrexExchange) btcRate(currency string) (float64, error) {
-	return be.marketRate(currency, "BTC")
-}
-
-func (be *bittrexExchange) convertCurrency(fromCurrency, toCurrency string, amount float64) (float64, error) {
-	if fromCurrency == toCurrency {
-		return amount, nil
+	var err error
+	for _, e := range errs {
+		err = multierror.Append(err, e)
 	}
-	rate, err := be.marketRate(fromCurrency, toCurrency)
+
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return amount * rate, nil
+
+	sold := make(map[string]bool)
+	filtered := make([]bittrex.Order, 0)
+
+	// leave only last buy orders in each active market
+	for _, order := range orders {
+		if !sold[order.Exchange] {
+			if order.OrderType == "LIMIT_BUY" {
+				filtered = append(filtered, order)
+			} else {
+				sold[order.Exchange] = true
+			}
+		}
+	}
+
+	return be.convertOrders(filtered, converter), nil
 }
 
-func (be *bittrexExchange) marketRate(fromCurrency, toCurrency string) (float64, error) {
-	if fromCurrency == toCurrency {
-		return 1, nil
-	}
-	for _, market := range be.marketSummaries {
-		if strings.ToUpper(market.MarketName) == strings.ToUpper(fmt.Sprintf("%s-%s", toCurrency, fromCurrency)) {
-			last, _ := market.Last.Float64()
-			return last, nil
+func (be *bittrexExchange) convertOrders(bittrexOrders []bittrex.Order, converter *currencyConverter) (orders []model.Order) {
+	for _, order := range bittrexOrders {
+		toFrom := strings.Split(order.Exchange, "-")
+		if len(toFrom) != 2 {
+			be.log.WithField("method", "convertOrders").Warnf("exchange name can'be parsed to from-to format - %s", order.Exchange)
+			continue
 		}
-		if strings.ToUpper(market.MarketName) == strings.ToUpper(fmt.Sprintf("%s-%s", fromCurrency, toCurrency)) {
-			reverse, _ := decimal.NewFromFloat(1).Div(market.Last).Float64()
-			return reverse, nil
+
+		_, bidRate, _, err := converter.MarketRate(toFrom[1], toFrom[0])
+		if err != nil {
+			be.log.WithField("method", "convertOrders").Warnf("market rate can't be found")
+			continue
 		}
+
+		usdtRate, err := converter.ConvertToUSDT(toFrom[0], 1)
+		if err != nil {
+			be.log.WithField("method", "convertOrders").Warnf("market convert to USDT")
+			continue
+		}
+		quanity, _ := order.Quantity.Float64()
+		buyRate, _ := order.Price.Div(order.Quantity).Float64()
+
+		orders = append(orders, model.Order{
+			Exchange:    model.ExchangeTypeBittrex,
+			Market:      order.Exchange,
+			Time:        order.TimeStamp.Time,
+			Amount:      quanity,
+			BuyRate:     buyRate,
+			SellNowRate: bidRate,
+			USDTRate:    usdtRate,
+		})
 	}
-	return 0, fmt.Errorf("neither market '%s-%s' nor '%s-%s' found in markets", fromCurrency, toCurrency, toCurrency, fromCurrency)
+	return
 }
 
 func (be *bittrexExchange) Ping() error {
 	_, err := be.bittrex.GetBalances()
 	return err
+}
+
+func (be *bittrexExchange) createCurrencyConverter() (*currencyConverter, error) {
+	marketSummaries, err := be.bittrex.GetMarketSummaries()
+	if err != nil {
+		return nil, err
+	}
+
+	return &currencyConverter{
+		marketSummaries: marketSummaries,
+		syncTime:        time.Now().UTC(),
+	}, nil
+}
+
+func (c *currencyConverter) ConvertToBTC(currency string, amount float64) (float64, error) {
+	return c.ConvertCurrency(currency, "BTC", amount)
+}
+
+func (c *currencyConverter) ConvertToUSDT(currency string, amount float64) (float64, error) {
+	return c.ConvertCurrency(currency, "USDT", amount)
+}
+
+func (c *currencyConverter) BtcRate(currency string) (float64, error) {
+	last, _, _, err := c.MarketRate(currency, "BTC")
+	return last, err
+}
+
+func (c *currencyConverter) ConvertCurrency(fromCurrency, toCurrency string, amount float64) (float64, error) {
+	if fromCurrency == toCurrency {
+		return amount, nil
+	}
+	last, _, _, err := c.MarketRate(fromCurrency, toCurrency)
+	if err != nil {
+		return 0, err
+	}
+	return amount * last, nil
+}
+
+func (c *currencyConverter) MarketRate(fromCurrency, toCurrency string) (last float64, bid float64, ask float64, err error) {
+	if fromCurrency == toCurrency {
+		return 1, 1, 1, nil
+	}
+	for _, market := range c.marketSummaries {
+		if strings.ToUpper(market.MarketName) == strings.ToUpper(fmt.Sprintf("%s-%s", toCurrency, fromCurrency)) {
+			last, _ = market.Last.Float64()
+			bid, _ = market.Bid.Float64()
+			ask, _ = market.Ask.Float64()
+			return
+		}
+		if strings.ToUpper(market.MarketName) == strings.ToUpper(fmt.Sprintf("%s-%s", fromCurrency, toCurrency)) {
+			last, _ = decimal.NewFromFloat(1).Div(market.Last).Float64()
+			bid, _ = decimal.NewFromFloat(1).Div(market.Bid).Float64()
+			ask, _ = decimal.NewFromFloat(1).Div(market.Ask).Float64()
+			return
+		}
+	}
+	return 0, 0, 0, fmt.Errorf("neither market '%s-%s' nor '%s-%s' found in markets", fromCurrency, toCurrency, toCurrency, fromCurrency)
 }
 
 func decToFloatQuiet(dec decimal.Decimal) float64 {

@@ -186,7 +186,6 @@ class ExchangeChart extends React.Component {
           <Col>USDT - {data[0] ? data[0].usdt : ""}</Col>
         </Row>
         <br/>
-        <br/>
         <Row>
           <Col>
             <ButtonGroup>
@@ -207,7 +206,9 @@ class ExchangeChart extends React.Component {
           {
             (this.state.loading) 
               ?
-              <ScaleLoader color="#26A65B" size="64px" style={{"margin-left": "470px", "margin-top": "220px"}}/>
+              <div style={{width: "1000px", height: "500px"}}>
+                <ScaleLoader color="#26A65B" size="64px" style={{"padding-left": "470px", "padding-top": "220px"}}/>
+              </div>
               :
               <LineChart
                 width={1000}

@@ -19,7 +19,7 @@ import (
 
 type NotifyCommand struct {
 	cobra.Command
-	APICommand
+	ExchangeAPICommand
 	Market        string
 	GreaterThan   float64
 	LessThan      float64
@@ -37,7 +37,7 @@ var (
 )
 
 func init() {
-	err := notifyCmd.APICommand.BindArgs(&notifyCmd.Command)
+	err := notifyCmd.ExchangeAPICommand.BindArgs(&notifyCmd.Command)
 	if err != nil {
 		panic(err)
 	}
@@ -57,7 +57,7 @@ func init() {
 }
 
 func (c *NotifyCommand) preRun(_ *cobra.Command, _ []string) error {
-	err := c.APICommand.CheckArgs()
+	err := c.ExchangeAPICommand.CheckArgs()
 	if err != nil {
 		return err
 	}

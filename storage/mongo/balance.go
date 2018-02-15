@@ -22,6 +22,43 @@ func NewBalanceStorage(session *mgo.Session, refreshSession bool) storage.Balanc
 	}
 }
 
+func (s *balanceStorage) Init() (err error) {
+	db, closeSession := s.getDB()
+	defer closeSession()
+
+	c := db.C("balance")
+	err = c.EnsureIndex(mgo.Index{
+		Name:       "time_curr_idx",
+		Key:        []string{"-time", "currency"},
+		Unique:     false,
+		Background: true,
+	})
+
+	if err != nil {
+		return
+	}
+
+	err = c.EnsureIndex(mgo.Index{
+		Name:       "time_idx",
+		Key:        []string{"-time"},
+		Unique:     false,
+		Background: true,
+	})
+
+	if err != nil {
+		return
+	}
+
+	err = c.EnsureIndex(mgo.Index{
+		Name:       "curr_idx",
+		Key:        []string{"curr"},
+		Unique:     false,
+		Background: true,
+	})
+
+	return
+}
+
 func (s *balanceStorage) Save(balances ...storage.Balance) error {
 	db, closeSession := s.getDB()
 	defer closeSession()

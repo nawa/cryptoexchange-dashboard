@@ -6,6 +6,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/nawa/cryptoexchange-wallet-info/usecase"
+
 	log "github.com/Sirupsen/logrus"
 
 	"github.com/nawa/cryptoexchange-wallet-info/http"
@@ -14,6 +16,7 @@ import (
 
 type HTTPCommand struct {
 	cobra.Command
+	ExchangeAPICommand
 	MongoCommand
 	HTTPAddress string
 }
@@ -34,13 +37,28 @@ func init() {
 		panic(err)
 	}
 
+	err = httpCmd.ExchangeAPICommand.BindArgs(&httpCmd.Command)
+	if err != nil {
+		panic(err)
+	}
+
 	httpCmd.Flags().StringVarP(&httpCmd.HTTPAddress, "addr", "a", "localhost:8080", "Service address")
 
+	httpCmd.PreRunE = httpCmd.preRun
 	httpCmd.RunE = httpCmd.run
 	rootCmd.AddCommand(&httpCmd.Command)
 }
 
+func (c *HTTPCommand) preRun(_ *cobra.Command, _ []string) error {
+	return c.ExchangeAPICommand.CheckArgs()
+}
+
 func (c *HTTPCommand) run(_ *cobra.Command, _ []string) error {
+	exchange, err := c.CreateExchange()
+	if err != nil {
+		return err
+	}
+
 	balanceStorage, err := c.CreateBalanceStorage()
 	if err != nil {
 		return err
@@ -48,7 +66,10 @@ func (c *HTTPCommand) run(_ *cobra.Command, _ []string) error {
 
 	ctx, ctxCancel := context.WithCancel(context.Background())
 
-	server := http.NewServer(ctx, httpCmd.HTTPAddress, balanceStorage)
+	balanceUsecase := usecase.NewBalanceUsecase(exchange, balanceStorage)
+	orderUsecase := usecase.NewOrderUsecase(exchange)
+
+	server := http.NewServer(ctx, httpCmd.HTTPAddress, balanceUsecase, orderUsecase)
 
 	go func() {
 		defer ctxCancel()

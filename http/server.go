@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/nawa/cryptoexchange-wallet-info/http/handler"
-	"github.com/nawa/cryptoexchange-wallet-info/storage"
 	"github.com/nawa/cryptoexchange-wallet-info/usecase"
 
 	"github.com/Sirupsen/logrus"
@@ -22,27 +21,31 @@ type Server struct {
 	log       *logrus.Entry
 }
 
-func NewServer(ctx context.Context, address string, balanceStorage storage.BalanceStorage) *Server {
+func NewServer(ctx context.Context, address string, balanceUsecase usecase.BalanceUsecase, orderUsecase usecase.OrderUsecase) *Server {
 	app := iris.New()
 	app.Use(recover.New())
 
-	baseHandler := handler.NewBaseHandler()
-	balanceUsecase := usecase.NewBalanceUsecase(nil, balanceStorage)
-	balanceHandler := handler.NewBalanceHandler(balanceUsecase)
-	app.Get("ping", baseHandler.Ping)
-
-	balanceGroup := app.Party("/balance")
 	crs := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000"},
 		AllowCredentials: true,
 	})
-	balanceGroup.Use(crs)
+	app.Use(crs)
+
+	baseHandler := handler.NewBaseHandler()
+	balanceHandler := handler.NewBalanceHandler(balanceUsecase)
+	orderHandler := handler.NewOrderHandler(orderUsecase)
+
+	app.Get("ping", baseHandler.Ping)
+
+	balanceGroup := app.Party("/balance")
 	balanceGroup.Get("/period/hourly/{hours:int}", balanceHandler.Hourly)
 	balanceGroup.Get("/period/weekly", balanceHandler.Weekly)
 	balanceGroup.Get("/period/monthly", balanceHandler.Monthly)
 	balanceGroup.Get("/period/all", balanceHandler.All)
 
 	balanceGroup.Get("/active", balanceHandler.ActiveCurrencies)
+
+	app.Get("/order", orderHandler.GetActiveOrders)
 
 	server := &Server{
 		addr: address,

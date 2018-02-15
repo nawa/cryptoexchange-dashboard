@@ -8,13 +8,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/nawa/cryptoexchange-wallet-info/storage/exchange"
 	"github.com/nawa/cryptoexchange-wallet-info/usecase"
 )
 
 type SyncCommand struct {
 	cobra.Command
-	APICommand
+	ExchangeAPICommand
 	MongoCommand
 	SyncPeriod int
 }
@@ -30,7 +29,7 @@ var (
 )
 
 func init() {
-	err := syncCmd.APICommand.BindArgs(&syncCmd.Command)
+	err := syncCmd.ExchangeAPICommand.BindArgs(&syncCmd.Command)
 	if err != nil {
 		panic(err)
 	}
@@ -46,14 +45,13 @@ func init() {
 }
 
 func (c *SyncCommand) preRun(_ *cobra.Command, _ []string) error {
-	return c.APICommand.CheckArgs()
+	return c.ExchangeAPICommand.CheckArgs()
 }
 
 func (c *SyncCommand) run(_ *cobra.Command, _ []string) error {
-	exchange := exchange.NewBittrexExchange(c.APIKey, c.APISecret)
-	err := exchange.Ping()
+	exchange, err := c.CreateExchange()
 	if err != nil {
-		return fmt.Errorf("exchange error: %s", err)
+		return err
 	}
 
 	balanceStorage, err := c.CreateBalanceStorage()
