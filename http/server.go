@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/nawa/cryptoexchange-wallet-info/http/handler"
-	"github.com/nawa/cryptoexchange-wallet-info/usecase"
+	"github.com/nawa/cryptoexchange-dashboard/http/handler"
+	"github.com/nawa/cryptoexchange-dashboard/usecase"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/iris-contrib/middleware/cors"

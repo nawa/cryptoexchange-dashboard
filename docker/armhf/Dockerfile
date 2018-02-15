@@ -1,7 +1,7 @@
 FROM container4armhf/armhf-alpine:latest
 
 WORKDIR /app
-COPY ./bin/cryptoexchange-wallet-info /app/
+COPY ./bin/cryptoexchange-dashboard /app/
 EXPOSE 8080
 
 RUN apk update \
@@ -9,4 +9,4 @@ RUN apk update \
     && apk --no-cache add --update -t ca-certificates  \
     && apk del --purge deps; rm -rf /tmp/* /var/cache/apk/*
 
-CMD /app/cryptoexchange-wallet-info $CRWI_ARGS
+CMD /app/cryptoexchange-dashboard $CRWI_ARGS

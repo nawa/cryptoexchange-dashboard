@@ -2,7 +2,7 @@ package handler
 
 import (
 	"github.com/kataras/iris"
-	"github.com/nawa/cryptoexchange-wallet-info/http/dto"
+	"github.com/nawa/cryptoexchange-dashboard/http/dto"
 )
 
 func WriteCustomError(ctx iris.Context, status int, message string) {

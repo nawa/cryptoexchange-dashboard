@@ -6,10 +6,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/nawa/cryptoexchange-wallet-info/model"
-	"github.com/nawa/cryptoexchange-wallet-info/storage"
-	"github.com/nawa/cryptoexchange-wallet-info/storage/exchange"
-	"github.com/nawa/cryptoexchange-wallet-info/storage/mongo"
+	"github.com/nawa/cryptoexchange-dashboard/model"
+	"github.com/nawa/cryptoexchange-dashboard/storage"
+	"github.com/nawa/cryptoexchange-dashboard/storage/exchange"
+	"github.com/nawa/cryptoexchange-dashboard/storage/mongo"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/globalsign/mgo"

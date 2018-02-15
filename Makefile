@@ -3,13 +3,13 @@ export $(shell sed 's/=.*//' docker/env)
 
 COMMIT_HASH=`git rev-parse --short HEAD 2>/dev/null`
 BUILD_DATE=`date -u +%FT%T%z`
-LDFLAGS=-ldflags "-X github.com/nawa/cryptoexchange-wallet-info/cmd.CommitHash=${COMMIT_HASH} -X github.com/nawa/cryptoexchange-wallet-info/cmd.BuildDate=${BUILD_DATE}"
+LDFLAGS=-ldflags "-X github.com/nawa/cryptoexchange-dashboard/cmd.CommitHash=${COMMIT_HASH} -X github.com/nawa/cryptoexchange-dashboard/cmd.BuildDate=${BUILD_DATE}"
 MY_UID = $(shell id -u)
 WORKDIR := $(PWD)
 
 build:
 	@ echo "-> Building binary ..."
-	@ go build ${LDFLAGS} -o bin/cryptoexchange-wallet-info main.go
+	@ go build ${LDFLAGS} -o bin/cryptoexchange-dashboard main.go
 .PHONY: build
 
 linter:
@@ -22,7 +22,7 @@ docker-image-build-x86:
 	docker rmi -f $(CRWI_IMAGENAME_X86):bak || true
 	docker tag $(CRWI_IMAGENAME_X86) $(CRWI_IMAGENAME_X86):bak || true
 	docker rmi -f $(CRWI_IMAGENAME_X86) || true
-	docker run --rm -v "$(WORKDIR)":/go/src/github.com/nawa/cryptoexchange-wallet-info -w /go/src/github.com/nawa/cryptoexchange-wallet-info $(CRWI_BUILDER_IMAGE) /bin/bash -c "CGO_ENABLED=0 GOOS=linux make build && chown -R $(MY_UID) bin"
+	docker run --rm -v "$(WORKDIR)":/go/src/github.com/nawa/cryptoexchange-dashboard -w /go/src/github.com/nawa/cryptoexchange-dashboard $(CRWI_BUILDER_IMAGE) /bin/bash -c "CGO_ENABLED=0 GOOS=linux make build && chown -R $(MY_UID) bin"
 	docker build -f $(WORKDIR)/$(CRWI_DOCKERFILE_X86) -t $(CRWI_IMAGENAME_X86) $(WORKDIR)
 
 docker-image-build-armhf:
@@ -30,7 +30,7 @@ docker-image-build-armhf:
 	docker rmi -f $(CRWI_IMAGENAME_ARMHF):bak || true
 	docker tag $(CRWI_IMAGENAME_ARMHF) $(CRWI_IMAGENAME_ARMHF):bak || true
 	docker rmi -f $(CRWI_IMAGENAME_ARMHF) || true
-	docker run --rm -v "$(WORKDIR)":/go/src/github.com/nawa/cryptoexchange-wallet-info -w /go/src/github.com/nawa/cryptoexchange-wallet-info $(CRWI_BUILDER_IMAGE) /bin/bash -c "CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 make build && chown -R $(MY_UID) bin"
+	docker run --rm -v "$(WORKDIR)":/go/src/github.com/nawa/cryptoexchange-dashboard -w /go/src/github.com/nawa/cryptoexchange-dashboard $(CRWI_BUILDER_IMAGE) /bin/bash -c "CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 make build && chown -R $(MY_UID) bin"
 	docker build -f $(WORKDIR)/$(CRWI_DOCKERFILE_ARMHF) -t $(CRWI_IMAGENAME_ARMHF) $(WORKDIR)
 
 #make docker-compose-x86 DCO_ARGS="up -d"

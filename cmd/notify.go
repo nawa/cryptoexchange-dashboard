@@ -13,8 +13,8 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cobra"
 
-	"github.com/nawa/cryptoexchange-wallet-info/storage"
-	"github.com/nawa/cryptoexchange-wallet-info/storage/exchange"
+	"github.com/nawa/cryptoexchange-dashboard/storage"
+	"github.com/nawa/cryptoexchange-dashboard/storage/exchange"
 )
 
 type NotifyCommand struct {
@@ -140,7 +140,7 @@ func (c *NotifyCommand) checkMarketLastPrice(exchange storage.Exchange) (*float6
 func (c *NotifyCommand) sendNotification(lastPrice float64) error {
 	notifier := notificator.New(notificator.Options{
 		DefaultIcon: "",
-		AppName:     "cryptoexchange-wallet-info",
+		AppName:     "cryptoexchange-dashboard",
 	})
 
 	msg := fmt.Sprintf("%s is reached price %s", notifyCmd.Market, decimal.NewFromFloat(lastPrice))

@@ -67,7 +67,7 @@ class App extends Component {
     return (
       <div>
         <Navbar color="dark" dark>
-          <NavbarBrand href="/">CryptoExchange Wallet Info</NavbarBrand>
+          <NavbarBrand href="/">CryptoExchange Dashboard</NavbarBrand>
           <Nav className="navbar-nav">
             <NavItem>
               <NavLink href="https://github.com/">Github</NavLink>

@@ -6,9 +6,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/spf13/cobra"
+	"github.com/nawa/cryptoexchange-dashboard/usecase"
 
-	"github.com/nawa/cryptoexchange-wallet-info/usecase"
+	"github.com/spf13/cobra"
 )
 
 type SyncCommand struct {
@@ -22,8 +22,8 @@ var (
 	syncCmd = &SyncCommand{
 		Command: cobra.Command{
 			Use:   "sync",
-			Short: "Syncs your wallet data",
-			Long:  "Syncs your wallet data with database in background. \nATTENTION: would be more secure is to generate keys with readonly permission",
+			Short: "Syncs your exchange data",
+			Long:  "Syncs your exchange data with database in background. \nATTENTION: would be more secure is to generate keys with readonly permission",
 		},
 	}
 )

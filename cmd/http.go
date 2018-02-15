@@ -6,11 +6,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/nawa/cryptoexchange-wallet-info/usecase"
+	"github.com/nawa/cryptoexchange-dashboard/http"
+	"github.com/nawa/cryptoexchange-dashboard/usecase"
 
 	log "github.com/Sirupsen/logrus"
-
-	"github.com/nawa/cryptoexchange-wallet-info/http"
 	"github.com/spf13/cobra"
 )
 
@@ -25,8 +24,8 @@ var (
 	httpCmd = &HTTPCommand{
 		Command: cobra.Command{
 			Use:   "http",
-			Short: "REST interface to your collected wallet info",
-			Long:  "Exposes REST interface to your collected wallet info",
+			Short: "REST interface to your collected exchange data",
+			Long:  "Exposes REST interface to your collected exchange data",
 		},
 	}
 )

@@ -1,6 +1,6 @@
 package storage
 
-import "github.com/nawa/cryptoexchange-wallet-info/model"
+import "github.com/nawa/cryptoexchange-dashboard/model"
 
 type Exchange interface {
 	GetBalance() (*model.Balance, error)

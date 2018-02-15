@@ -2,8 +2,8 @@ package handler
 
 import (
 	"github.com/kataras/iris"
-	"github.com/nawa/cryptoexchange-wallet-info/http/dto"
-	"github.com/nawa/cryptoexchange-wallet-info/usecase"
+	"github.com/nawa/cryptoexchange-dashboard/http/dto"
+	"github.com/nawa/cryptoexchange-dashboard/usecase"
 )
 
 type BalanceHandler struct {

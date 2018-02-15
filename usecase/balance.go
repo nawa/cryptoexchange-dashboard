@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/nawa/cryptoexchange-wallet-info/model"
-	"github.com/nawa/cryptoexchange-wallet-info/storage"
+	"github.com/nawa/cryptoexchange-dashboard/model"
+	"github.com/nawa/cryptoexchange-dashboard/storage"
 
 	"github.com/Sirupsen/logrus"
 )

@@ -11,8 +11,8 @@ import (
 var debug bool
 
 var rootCmd = &cobra.Command{
-	Use:   "cryptoexchange-wallet-info",
-	Short: "CryptoExchange Wallet Info",
+	Use:   "cryptoexchange-dashboard",
+	Short: "CryptoExchange Dashboard",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		if debug {
 			logrus.SetLevel(logrus.DebugLevel)

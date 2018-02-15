@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"github.com/nawa/cryptoexchange-wallet-info/model"
+	"github.com/nawa/cryptoexchange-dashboard/model"
 )
 
 type BalanceDTO map[string][]CurrencyBalanceDTO

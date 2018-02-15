@@ -3,7 +3,7 @@ package storage
 import (
 	"time"
 
-	"github.com/nawa/cryptoexchange-wallet-info/model"
+	"github.com/nawa/cryptoexchange-dashboard/model"
 )
 
 type BalanceStorage interface {

@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nawa/cryptoexchange-wallet-info/model"
-	"github.com/nawa/cryptoexchange-wallet-info/storage"
-	"github.com/nawa/cryptoexchange-wallet-info/utils"
+	"github.com/nawa/cryptoexchange-dashboard/model"
+	"github.com/nawa/cryptoexchange-dashboard/storage"
+	"github.com/nawa/cryptoexchange-dashboard/utils"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/hashicorp/go-multierror"
