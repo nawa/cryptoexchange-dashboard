@@ -8,7 +8,6 @@ type CurrencyBalance struct {
 	Currency   string
 	Amount     float64
 	BTCAmount  float64
-	BTCRate    float64
 	USDTAmount float64
 	Time       time.Time
 }

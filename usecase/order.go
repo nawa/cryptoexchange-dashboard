@@ -6,24 +6,24 @@ import (
 	"github.com/nawa/cryptoexchange-dashboard/storage"
 )
 
-type OrderUsecase interface {
+type OrderUsecases interface {
 	GetActiveOrders() ([]model.Order, error)
 }
 
-type orderUsecase struct {
+type orderUsecases struct {
 	exchange storage.Exchange
 	log      *logrus.Entry
 }
 
-func NewOrderUsecase(exchange storage.Exchange) OrderUsecase {
+func NewOrderUsecase(exchange storage.Exchange) OrderUsecases {
 	log := logrus.WithField("component", "orderUC")
-	return &orderUsecase{
+	return &orderUsecases{
 		exchange: exchange,
 		log:      log,
 	}
 }
 
-func (u *orderUsecase) GetActiveOrders() (orders []model.Order, err error) {
+func (u *orderUsecases) GetActiveOrders() (orders []model.Order, err error) {
 	orders, err = u.exchange.GetOrders()
 	if err != nil {
 		u.log.WithField("method", "GetActiveOrders").WithError(err).Error()

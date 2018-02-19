@@ -6,6 +6,7 @@ BUILD_DATE=`date -u +%FT%T%z`
 LDFLAGS=-ldflags "-X github.com/nawa/cryptoexchange-dashboard/cmd.CommitHash=${COMMIT_HASH} -X github.com/nawa/cryptoexchange-dashboard/cmd.BuildDate=${BUILD_DATE}"
 MY_UID = $(shell id -u)
 WORKDIR := $(PWD)
+COVERAGE_DIR=$(CURDIR)/coverage
 
 build:
 	@ echo "-> Building binary ..."
@@ -16,6 +17,40 @@ linter:
 	@ echo "-> Running linters ..."
 	@ gometalinter --vendor --config=.gometalinter.json --enable=goimports ./...
 .PHONY: linter
+
+mockgen:
+	@ echo "-> Generate mocks for tests ..."
+	# @ mockgen -source storage/balance.go -package mock_data -destination storage/mock_data/balance_mock.go
+	# @ mockgen -source storage/exchange.go -package mock_data -destination storage/mock_data/exchange_mock.go
+	# mockgen -source usecase/balance.go -package mock_data -destination usecase/mock_data/balance_mock.go
+.PHONY: mockgen
+
+test:
+	@ echo "-> Run tests ..."
+
+	go test ./...
+.PHONY: test
+
+test-coverage:
+	@ echo "-> Running tests with coverage ..."
+	@rm -rf $(COVERAGE_DIR)
+	@mkdir -p $(COVERAGE_DIR)
+
+	@go list ./... | grep -v "/testdata" | grep -v "/mocks" | xargs -I {} mkdir -p $(COVERAGE_DIR)/{}
+	@go list ./... | grep -v "/testdata" | grep -v "/mocks" | xargs -I {} go test -v -coverprofile $(COVERAGE_DIR)/{}/cover.out $(GOTEST_PARAM) {}
+
+	@echo "mode: set" > $(COVERAGE_DIR)/coverage-total.out
+	@go list ./... | grep -v "/testdata" | grep -v "/mocks" | xargs -I {} cat $(COVERAGE_DIR)/{}/cover.out {} 2>/dev/null | grep -v "mode: set" >> $(COVERAGE_DIR)/coverage-total.out
+
+	@go tool cover -func=$(COVERAGE_DIR)/coverage-total.out | tail -n 1 | xargs -I {} echo "TOTAL COVERAGE. "{}
+
+.PHONY: coverage-gen
+
+coverage-open:
+	@ echo "-> Opening coverage report ..."
+	go tool cover -html=$(COVERAGE_DIR)/coverage-total.out -o $(COVERAGE_DIR)/coverage-total.html
+	open $(COVERAGE_DIR)/coverage-total.html
+.PHONY: coverage-open
 
 docker-image-build-x86:
 	@ echo "-> Building Docker image ..."

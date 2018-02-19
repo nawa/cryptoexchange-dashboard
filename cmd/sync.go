@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/nawa/cryptoexchange-dashboard/usecase"
 
@@ -60,11 +61,11 @@ func (c *SyncCommand) run(_ *cobra.Command, _ []string) error {
 	}
 
 	balanceUsecase := usecase.NewBalanceUsecase(exchange, balanceStorage)
-	synchronizer, err := balanceUsecase.StartSyncFromExchangePeriodically(c.SyncPeriod)
+	stop, err := balanceUsecase.StartSyncFromExchangePeriodically(time.Second * time.Duration(c.SyncPeriod))
 	if err != nil {
 		return err
 	}
-	defer synchronizer.Stop()
+	defer stop()
 
 	exitC := make(chan os.Signal, 1)
 	signal.Notify(exitC,

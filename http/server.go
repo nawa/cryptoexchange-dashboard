@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/nawa/cryptoexchange-dashboard/http/handler"
 	"github.com/nawa/cryptoexchange-dashboard/usecase"
 
 	"github.com/Sirupsen/logrus"
@@ -14,14 +13,13 @@ import (
 )
 
 type Server struct {
-	addr      string
 	app       *iris.Application
 	ctx       context.Context
 	ctxCancel context.CancelFunc
 	log       *logrus.Entry
 }
 
-func NewServer(ctx context.Context, address string, balanceUsecase usecase.BalanceUsecase, orderUsecase usecase.OrderUsecase) *Server {
+func NewServer(balanceUsecase usecase.BalanceUsecases, orderUsecase usecase.OrderUsecases) *Server {
 	app := iris.New()
 	app.Use(recover.New())
 
@@ -31,14 +29,14 @@ func NewServer(ctx context.Context, address string, balanceUsecase usecase.Balan
 	})
 	app.Use(crs)
 
-	baseHandler := handler.NewBaseHandler()
-	balanceHandler := handler.NewBalanceHandler(balanceUsecase)
-	orderHandler := handler.NewOrderHandler(orderUsecase)
+	baseHandler := NewBaseHandler()
+	balanceHandler := NewBalanceHandler(balanceUsecase)
+	orderHandler := NewOrderHandler(orderUsecase)
 
 	app.Get("ping", baseHandler.Ping)
 
 	balanceGroup := app.Party("/balance")
-	balanceGroup.Get("/period/hourly/{hours:int}", balanceHandler.Hourly)
+	balanceGroup.Get("/period/hourly/{hours}", balanceHandler.Hourly)
 	balanceGroup.Get("/period/weekly", balanceHandler.Weekly)
 	balanceGroup.Get("/period/monthly", balanceHandler.Monthly)
 	balanceGroup.Get("/period/all", balanceHandler.All)
@@ -48,18 +46,18 @@ func NewServer(ctx context.Context, address string, balanceUsecase usecase.Balan
 	app.Get("/order", orderHandler.GetActiveOrders)
 
 	server := &Server{
-		addr: address,
-		app:  app,
-		log:  logrus.WithField("component", "HTTPServer"),
+		app: app,
+		log: logrus.WithField("component", "HTTPServer"),
 	}
-	server.ctx, server.ctxCancel = context.WithCancel(ctx)
 	return server
 }
 
-func (server *Server) Start() {
-	server.log.Infof("starting HTTP server on '%s'...", server.addr)
+func (server *Server) Start(ctx context.Context, address string) {
+	server.log.Infof("starting HTTP server on '%s'...", address)
 
-	err := server.app.Run(iris.Addr(server.addr), iris.WithoutInterruptHandler)
+	server.ctx, server.ctxCancel = context.WithCancel(ctx)
+
+	err := server.app.Run(iris.Addr(address), iris.WithoutInterruptHandler)
 	if err != nil {
 		server.log.WithError(err).Errorf("HTTP server interrupted with error")
 	}

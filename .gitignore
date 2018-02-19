@@ -1,7 +1,10 @@
 # IDE related
 .idea/
 *.iml
-/docker/env
 /bin
 /debug
 /.vscode
+debug.test
+
+/docker/env
+/coverage

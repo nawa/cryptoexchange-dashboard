@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/0xAX/notificator"
 	log "github.com/Sirupsen/logrus"
+	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cobra"
 

@@ -103,6 +103,9 @@ class App extends Component {
               <TabContent activeTab={this.state.activeTab}>
                 <TabPane tabId="total">
                   <ExchangeChart currency="total" title="BTC Total"/>
+                  {/* <button onclick={this.fetchOrders()}>
+                    Refresh
+                  </button> */}
                   <Table>
                     <thead>
                       <tr>

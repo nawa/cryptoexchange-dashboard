@@ -13,7 +13,7 @@ type CurrencyBalanceDTO struct {
 	Time       int64   `json:"time"`
 }
 
-func NewBalanceDTO(model model.CurrencyBalance) *CurrencyBalanceDTO {
+func NewCurrencyBalanceDTO(model model.CurrencyBalance) *CurrencyBalanceDTO {
 	return &CurrencyBalanceDTO{
 		Amount:     model.Amount,
 		BTCAmount:  model.BTCAmount,

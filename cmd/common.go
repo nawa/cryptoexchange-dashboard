@@ -1,19 +1,19 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/globalsign/mgo"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 
 	"github.com/nawa/cryptoexchange-dashboard/model"
 	"github.com/nawa/cryptoexchange-dashboard/storage"
 	"github.com/nawa/cryptoexchange-dashboard/storage/exchange"
 	"github.com/nawa/cryptoexchange-dashboard/storage/mongo"
-
-	"github.com/Sirupsen/logrus"
-	"github.com/globalsign/mgo"
-	"github.com/spf13/cobra"
 )
 
 const (

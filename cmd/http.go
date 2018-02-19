@@ -68,11 +68,11 @@ func (c *HTTPCommand) run(_ *cobra.Command, _ []string) error {
 	balanceUsecase := usecase.NewBalanceUsecase(exchange, balanceStorage)
 	orderUsecase := usecase.NewOrderUsecase(exchange)
 
-	server := http.NewServer(ctx, httpCmd.HTTPAddress, balanceUsecase, orderUsecase)
+	server := http.NewServer(balanceUsecase, orderUsecase)
 
 	go func() {
 		defer ctxCancel()
-		server.Start()
+		server.Start(ctx, httpCmd.HTTPAddress)
 	}()
 
 	sigC := make(chan os.Signal, 1)
@@ -89,6 +89,6 @@ func (c *HTTPCommand) run(_ *cobra.Command, _ []string) error {
 
 	server.Stop()
 
-	log.Info("Service stopped")
+	log.Info("Server stopped")
 	return nil
 }

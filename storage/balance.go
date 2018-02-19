@@ -7,7 +7,7 @@ import (
 )
 
 type BalanceStorage interface {
-	// Init inits the storage, such as prepares indexes and another
+	// Init initializes the storage, such as prepares indexes and another
 	Init() error
 	Save(balances ...Balance) error
 	FetchHourly(currency string, hours int) ([]Balance, error)
@@ -23,7 +23,6 @@ type Balance struct {
 	Amount     float64   `bson:"amount"`
 	BTCAmount  float64   `bson:"btc_amount"`
 	USDTAmount float64   `bson:"usdt_amount"`
-	BTCRate    float64   `bson:"btc_rate"`
 	Time       time.Time `bson:"time"`
 }
 
@@ -32,7 +31,6 @@ func NewBalances(b *model.Balance) (result []Balance) {
 		Exchange:   string(b.Exchange),
 		Currency:   "total",
 		Amount:     b.BTCAmount,
-		BTCRate:    1,
 		BTCAmount:  b.BTCAmount,
 		USDTAmount: b.USDTAmount,
 		Time:       b.Time,
@@ -43,10 +41,9 @@ func NewBalances(b *model.Balance) (result []Balance) {
 			Exchange:   string(b.Exchange),
 			Currency:   c.Currency,
 			Amount:     c.Amount,
-			BTCRate:    c.BTCRate,
 			BTCAmount:  c.BTCAmount,
 			USDTAmount: c.USDTAmount,
-			Time:       b.Time,
+			Time:       c.Time,
 		})
 	}
 	return result
@@ -57,7 +54,6 @@ func (b *Balance) ToModel() *model.CurrencyBalance {
 		Currency:   b.Currency,
 		Amount:     b.Amount,
 		BTCAmount:  b.BTCAmount,
-		BTCRate:    b.BTCRate,
 		USDTAmount: b.USDTAmount,
 		Time:       b.Time,
 	}

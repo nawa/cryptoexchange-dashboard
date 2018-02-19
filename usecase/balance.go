@@ -4,14 +4,16 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/nawa/cryptoexchange-dashboard/usecase/ticker"
+
 	"github.com/nawa/cryptoexchange-dashboard/model"
 	"github.com/nawa/cryptoexchange-dashboard/storage"
 
 	"github.com/Sirupsen/logrus"
 )
 
-type BalanceUsecase interface {
-	StartSyncFromExchangePeriodically(period int) (*BalanceSynchronizer, error)
+type BalanceUsecases interface {
+	StartSyncFromExchangePeriodically(period time.Duration) (stop func(), err error)
 	SyncFromExchange() error
 	// All records from the last N hours
 	FetchHourly(currency string, hours int) ([]model.CurrencyBalance, error)
@@ -25,28 +27,34 @@ type BalanceUsecase interface {
 	GetActiveCurrencies() ([]model.CurrencyBalance, error)
 }
 
-type balanceUsecase struct {
+type balanceUsecases struct {
 	exchange       storage.Exchange
 	balanceStorage storage.BalanceStorage
 	log            *logrus.Entry
 }
 
-func NewBalanceUsecase(exchange storage.Exchange, balanceStorage storage.BalanceStorage) BalanceUsecase {
+func NewBalanceUsecase(exchange storage.Exchange, balanceStorage storage.BalanceStorage) BalanceUsecases {
 	log := logrus.WithField("component", "balanceUC")
-	return &balanceUsecase{
+	return &balanceUsecases{
 		exchange:       exchange,
 		balanceStorage: balanceStorage,
 		log:            log,
 	}
 }
 
-func (u *balanceUsecase) StartSyncFromExchangePeriodically(period int) (*BalanceSynchronizer, error) {
-	ticker := newBalanceSynchronizer(time.Second*time.Duration(period), u)
-	err := ticker.start()
-	return ticker, err
+func (u *balanceUsecases) StartSyncFromExchangePeriodically(period time.Duration) (stop func(), err error) {
+	ticker := ticker.NewTicker(period, u.SyncFromExchange)
+	err = ticker.Start()
+	if err != nil {
+		return nil, err
+	}
+
+	return func() {
+		ticker.Stop()
+	}, err
 }
 
-func (u *balanceUsecase) SyncFromExchange() error {
+func (u *balanceUsecases) SyncFromExchange() error {
 	balance, err := u.exchange.GetBalance()
 	if err != nil {
 		u.log.WithField("method", "SyncFromExchange").WithError(err).Error()
@@ -70,7 +78,7 @@ func (u *balanceUsecase) SyncFromExchange() error {
 	return nil
 }
 
-func (u *balanceUsecase) FetchHourly(currency string, hours int) (balances []model.CurrencyBalance, err error) {
+func (u *balanceUsecases) FetchHourly(currency string, hours int) (balances []model.CurrencyBalance, err error) {
 	stBalances, err := u.balanceStorage.FetchHourly(currency, hours)
 	if err != nil {
 		u.log.WithField("method", "FetchHourly").WithError(err).Error()
@@ -82,7 +90,7 @@ func (u *balanceUsecase) FetchHourly(currency string, hours int) (balances []mod
 	return
 }
 
-func (u *balanceUsecase) FetchWeekly(currency string) (balances []model.CurrencyBalance, err error) {
+func (u *balanceUsecases) FetchWeekly(currency string) (balances []model.CurrencyBalance, err error) {
 	stBalances, err := u.balanceStorage.FetchWeekly(currency)
 	if err != nil {
 		u.log.WithField("method", "FetchWeekly").WithError(err).Error()
@@ -94,7 +102,7 @@ func (u *balanceUsecase) FetchWeekly(currency string) (balances []model.Currency
 	return
 }
 
-func (u *balanceUsecase) FetchMonthly(currency string) (balances []model.CurrencyBalance, err error) {
+func (u *balanceUsecases) FetchMonthly(currency string) (balances []model.CurrencyBalance, err error) {
 	stBalances, err := u.balanceStorage.FetchMonthly(currency)
 	if err != nil {
 		u.log.WithField("method", "FetchMonthly").WithError(err).Error()
@@ -106,7 +114,7 @@ func (u *balanceUsecase) FetchMonthly(currency string) (balances []model.Currenc
 	return
 }
 
-func (u *balanceUsecase) FetchAll(currency string) (balances []model.CurrencyBalance, err error) {
+func (u *balanceUsecases) FetchAll(currency string) (balances []model.CurrencyBalance, err error) {
 	stBalances, err := u.balanceStorage.FetchAll(currency)
 	if err != nil {
 		u.log.WithField("method", "FetchAll").WithError(err).Error()
@@ -118,7 +126,7 @@ func (u *balanceUsecase) FetchAll(currency string) (balances []model.CurrencyBal
 	return
 }
 
-func (u *balanceUsecase) GetActiveCurrencies() (balances []model.CurrencyBalance, err error) {
+func (u *balanceUsecases) GetActiveCurrencies() (balances []model.CurrencyBalance, err error) {
 	stBalances, err := u.balanceStorage.GetActiveCurrencies()
 
 	if err != nil {

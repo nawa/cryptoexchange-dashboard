@@ -26,10 +26,22 @@
   version = "v1.0.4"
 
 [[projects]]
+  name = "github.com/ajg/form"
+  packages = ["."]
+  revision = "cc2954064ec9ea8d93917f0f87456e11d7b881ad"
+  version = "v1.5"
+
+[[projects]]
   branch = "master"
   name = "github.com/aymerick/raymond"
   packages = [".","ast","lexer","parser"]
   revision = "72acac2207479d21dd45898c2a4264246c818148"
+
+[[projects]]
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
+  version = "v1.1.0"
 
 [[projects]]
   branch = "master"
@@ -51,15 +63,39 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/gavv/monotime"
+  packages = ["."]
+  revision = "6f8212e8d10df7383609d3c377ca08884d8f3ec0"
+
+[[projects]]
+  branch = "master"
   name = "github.com/globalsign/mgo"
   packages = [".","bson","internal/json","internal/sasl","internal/scram"]
   revision = "896bbb89d21253a28cd5a7f8b81fe091410cb94d"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/golang/mock"
+  packages = ["gomock"]
+  revision = "58cd061d09382b6011f84c1291ebe50ef2e25bab"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/google/go-querystring"
+  packages = ["query"]
+  revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
 
 [[projects]]
   name = "github.com/gorilla/websocket"
   packages = ["."]
   revision = "ea4d1f681babbce9545c9c5f3d5194a789c89f5b"
   version = "v1.2.0"
+
+[[projects]]
+  name = "github.com/h2non/gock"
+  packages = ["."]
+  revision = "26775f23aa9da4cbd47bc2600a57ac07bbf3bd20"
+  version = "v1.0.7"
 
 [[projects]]
   branch = "master"
@@ -80,6 +116,12 @@
   revision = "4fe82ae3040f80a03d04d2cccb5606a626b8e1ee"
 
 [[projects]]
+  name = "github.com/imkira/go-interpol"
+  packages = ["."]
+  revision = "5accad8134979a6ac504d456a6c7f1c53da237ca"
+  version = "v1.1.0"
+
+[[projects]]
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
@@ -90,6 +132,12 @@
   name = "github.com/iris-contrib/formBinder"
   packages = ["."]
   revision = "ad9fb86c356f971f30319c40ddbdcf72129a2791"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/iris-contrib/httpexpect"
+  packages = ["."]
+  revision = "65e93247e7071782e760f82086e8b677cca0c78a"
 
 [[projects]]
   name = "github.com/iris-contrib/middleware"
@@ -117,7 +165,7 @@
 
 [[projects]]
   name = "github.com/kataras/iris"
-  packages = [".","cache","cache/cfg","cache/client","cache/client/rule","cache/entry","cache/ruleset","cache/uri","context","core/errors","core/handlerconv","core/host","core/maintenance","core/maintenance/client","core/maintenance/encoding","core/maintenance/version","core/memstore","core/netutil","core/router","core/router/macro","core/router/macro/interpreter/ast","core/router/macro/interpreter/lexer","core/router/macro/interpreter/parser","core/router/macro/interpreter/token","core/router/node","hero","hero/di","middleware/logger","middleware/recover","mvc","sessions","view"]
+  packages = [".","cache","cache/cfg","cache/client","cache/client/rule","cache/entry","cache/ruleset","cache/uri","context","core/errors","core/handlerconv","core/host","core/maintenance","core/maintenance/client","core/maintenance/encoding","core/maintenance/version","core/memstore","core/netutil","core/router","core/router/macro","core/router/macro/interpreter/ast","core/router/macro/interpreter/lexer","core/router/macro/interpreter/parser","core/router/macro/interpreter/token","core/router/node","hero","hero/di","httptest","middleware/logger","middleware/recover","mvc","sessions","view"]
   revision = "2546d8bca00d42e7dbcc63d8dbbcfc0735808600"
   version = "v10.2.0"
 
@@ -176,6 +224,24 @@
   revision = "542fd4642604d0d0c26112396ce5b1a9d01eee0b"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/moul/http2curl"
+  packages = ["."]
+  revision = "9ac6cf4d929b2fa8fd2d2e6dec5bb0feb4f4911d"
+
+[[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
+
+[[projects]]
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/rs/cors"
   packages = ["."]
   revision = "7af7a1e09ba336d2ea14b1ce73bf693c6837dbf6"
@@ -191,6 +257,12 @@
   name = "github.com/satori/go.uuid"
   packages = ["."]
   revision = "5bf94b69c6b68ee1b541973bb8e1144db23a194b"
+
+[[projects]]
+  name = "github.com/sergi/go-diff"
+  packages = ["diffmatchpatch"]
+  revision = "1744e2970ca51c86172c8190fadad617561ed6e7"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/shopspring/decimal"
@@ -217,6 +289,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/stretchr/testify"
+  packages = ["assert","require"]
+  revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
+  version = "v1.2.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/thebotguys/signalr"
   packages = ["."]
@@ -230,6 +308,42 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/xeipuuv/gojsonpointer"
+  packages = ["."]
+  revision = "4e3ac2762d5f479393488629ee9370b50873b3a6"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/xeipuuv/gojsonreference"
+  packages = ["."]
+  revision = "bd5ef7bd5415a7ac448318e64f11a24cd21e594b"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/xeipuuv/gojsonschema"
+  packages = ["."]
+  revision = "8bcffc811467a5f691810420385be6e66b35a317"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/yalp/jsonpath"
+  packages = ["."]
+  revision = "024efa345fa9e1e6574b31ca937d71fd09da80d1"
+
+[[projects]]
+  name = "github.com/yudai/gojsondiff"
+  packages = [".","formatter"]
+  revision = "7b1b7adf999dab73a6eb02669c3d82dbb27a3dd6"
+  version = "1.0.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/yudai/golcs"
+  packages = ["."]
+  revision = "ecda9a501e8220fae3b4b600c3db4b0ba22cfc68"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/crypto"
   packages = ["acme","acme/autocert","ssh/terminal"]
   revision = "9de5f2eaf759b4c4550b3db39fed2e9e5f86f45c"
@@ -237,7 +351,7 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = ["html","html/atom"]
+  packages = ["context","html","html/atom","idna","publicsuffix"]
   revision = "f5dfe339be1d06f81b22525fe34671ee7d2c8904"
 
 [[projects]]
@@ -245,6 +359,12 @@
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
   revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
+
+[[projects]]
+  name = "golang.org/x/text"
+  packages = ["collate","collate/build","internal/colltab","internal/gen","internal/tag","internal/triegen","internal/ucd","language","secure/bidirule","transform","unicode/bidi","unicode/cldr","unicode/norm","unicode/rangetable"]
+  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
+  version = "v0.3.0"
 
 [[projects]]
   branch = "v2"
@@ -261,6 +381,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8d2aac43ff247200648ef510f9cf3bd36da7725a539de9dcf4d919529afbdd9c"
+  inputs-digest = "03adcc1a12f0979613ec6001d1278a0edd673abc688698c8b375ead4a524e2ec"
   solver-name = "gps-cdcl"
   solver-version = 1
