@@ -3,11 +3,11 @@ package testdata
 import (
 	"time"
 
-	"github.com/nawa/cryptoexchange-dashboard/model"
+	"github.com/nawa/cryptoexchange-dashboard/domain"
 )
 
-func CurrencyBalances() map[string][]model.CurrencyBalance {
-	return map[string][]model.CurrencyBalance{
+func CurrencyBalances() map[string][]domain.CurrencyBalance {
+	return map[string][]domain.CurrencyBalance{
 		"CUR1": {
 			{
 				Currency:   "CUR1",
@@ -36,10 +36,10 @@ func CurrencyBalances() map[string][]model.CurrencyBalance {
 	}
 }
 
-func Orders() []model.Order {
-	return []model.Order{
+func Orders() []domain.Order {
+	return []domain.Order{
 		{
-			Exchange:    model.ExchangeTypeBittrex,
+			Exchange:    domain.ExchangeTypeBittrex,
 			Market:      "market1",
 			Time:        time.Unix(0, 0).UTC(),
 			BuyRate:     1,
@@ -48,7 +48,7 @@ func Orders() []model.Order {
 			USDTRate:    4,
 		},
 		{
-			Exchange:    model.ExchangeTypeBittrex,
+			Exchange:    domain.ExchangeTypeBittrex,
 			Market:      "market2",
 			Time:        time.Unix(0, 0).UTC().Add(time.Hour),
 			BuyRate:     5,

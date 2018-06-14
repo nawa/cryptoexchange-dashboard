@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/nawa/cryptoexchange-dashboard/domain"
 	"github.com/nawa/cryptoexchange-dashboard/utils"
 
-	"github.com/nawa/cryptoexchange-dashboard/model"
 	"github.com/shopspring/decimal"
 	bittrex "github.com/toorop/go-bittrex"
 )
@@ -67,8 +67,8 @@ func BittrexBalances() []bittrex.Balance {
 	}
 }
 
-func ModelBalance() *model.Balance {
-	currencyBalances := []model.CurrencyBalance{
+func ModelBalance() *domain.Balance {
+	currencyBalances := []domain.CurrencyBalance{
 		{
 			Amount:     1000,
 			BTCAmount:  1000,
@@ -89,17 +89,17 @@ func ModelBalance() *model.Balance {
 		},
 	}
 
-	return &model.Balance{
+	return &domain.Balance{
 		Currencies: currencyBalances,
-		Exchange:   model.ExchangeTypeBittrex,
+		Exchange:   domain.ExchangeTypeBittrex,
 		BTCAmount:  currencyBalances[0].BTCAmount + currencyBalances[1].BTCAmount + currencyBalances[2].BTCAmount,
 		USDTAmount: currencyBalances[0].USDTAmount + currencyBalances[1].USDTAmount + currencyBalances[2].USDTAmount,
 	}
 }
 
-func ModelMarketInfo() *model.MarketInfo {
+func ModelMarketInfo() *domain.MarketInfo {
 	marketSummary := BittrexMarketSummaries()[0]
-	return &model.MarketInfo{
+	return &domain.MarketInfo{
 		MarketName: marketSummary.MarketName,
 		Last:       utils.DecimalToFloatQuiet(marketSummary.Last),
 		Bid:        utils.DecimalToFloatQuiet(marketSummary.Bid),
@@ -188,7 +188,7 @@ func BittrexOrders() []bittrex.Order {
 	return orders
 }
 
-func ModelOrders() []model.Order {
+func ModelOrders() []domain.Order {
 	basetime := time.Unix(0, 0).UTC().Add(time.Hour * 24 * 1000)
 	s := basetime.Format(bittrex.TIME_FORMAT)
 	basetimeAfterBittrexSerialization, err := time.Parse(bittrex.TIME_FORMAT, s)
@@ -197,10 +197,10 @@ func ModelOrders() []model.Order {
 	}
 	bittrexOrders := BittrexOrders()
 	bittrexMarketSummaries := BittrexMarketSummaries()
-	return []model.Order{
+	return []domain.Order{
 		{
 			Market:      "BTC-CUR1",
-			Exchange:    model.ExchangeTypeBittrex,
+			Exchange:    domain.ExchangeTypeBittrex,
 			Time:        basetimeAfterBittrexSerialization,
 			Amount:      utils.DecimalToFloatQuiet(bittrexOrders[0].Quantity),
 			BuyRate:     utils.DecimalToFloatQuiet(bittrexOrders[0].Price.Div(bittrexOrders[0].Quantity)),
@@ -209,7 +209,7 @@ func ModelOrders() []model.Order {
 		},
 		{
 			Market:      "BTC-CUR2",
-			Exchange:    model.ExchangeTypeBittrex,
+			Exchange:    domain.ExchangeTypeBittrex,
 			Time:        basetimeAfterBittrexSerialization.Add(-time.Hour),
 			Amount:      utils.DecimalToFloatQuiet(bittrexOrders[1].Quantity),
 			BuyRate:     utils.DecimalToFloatQuiet(bittrexOrders[1].Price.Div(bittrexOrders[1].Quantity)),
@@ -218,7 +218,7 @@ func ModelOrders() []model.Order {
 		},
 		{
 			Market:      "BTC-CUR1",
-			Exchange:    model.ExchangeTypeBittrex,
+			Exchange:    domain.ExchangeTypeBittrex,
 			Time:        basetimeAfterBittrexSerialization.Add(-time.Hour * 2),
 			Amount:      utils.DecimalToFloatQuiet(bittrexOrders[2].Quantity),
 			BuyRate:     utils.DecimalToFloatQuiet(bittrexOrders[2].Price.Div(bittrexOrders[2].Quantity)),
@@ -227,7 +227,7 @@ func ModelOrders() []model.Order {
 		},
 		{
 			Market:      "BTC-CUR2",
-			Exchange:    model.ExchangeTypeBittrex,
+			Exchange:    domain.ExchangeTypeBittrex,
 			Time:        basetimeAfterBittrexSerialization.Add(-time.Hour * 5),
 			Amount:      utils.DecimalToFloatQuiet(bittrexOrders[5].Quantity),
 			BuyRate:     utils.DecimalToFloatQuiet(bittrexOrders[5].Price.Div(bittrexOrders[5].Quantity)),

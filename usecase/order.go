@@ -2,12 +2,12 @@ package usecase
 
 import (
 	"github.com/Sirupsen/logrus"
-	"github.com/nawa/cryptoexchange-dashboard/model"
+	"github.com/nawa/cryptoexchange-dashboard/domain"
 	"github.com/nawa/cryptoexchange-dashboard/storage"
 )
 
 type OrderUsecases interface {
-	GetActiveOrders() ([]model.Order, error)
+	GetActiveOrders() ([]domain.Order, error)
 }
 
 type orderUsecases struct {
@@ -23,7 +23,7 @@ func NewOrderUsecase(exchange storage.Exchange) OrderUsecases {
 	}
 }
 
-func (u *orderUsecases) GetActiveOrders() (orders []model.Order, err error) {
+func (u *orderUsecases) GetActiveOrders() (orders []domain.Order, err error) {
 	orders, err = u.exchange.GetOrders()
 	if err != nil {
 		u.log.WithField("method", "GetActiveOrders").WithError(err).Error()

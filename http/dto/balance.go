@@ -1,8 +1,6 @@
 package dto
 
-import (
-	"github.com/nawa/cryptoexchange-dashboard/model"
-)
+import "github.com/nawa/cryptoexchange-dashboard/domain"
 
 type BalanceDTO map[string][]CurrencyBalanceDTO
 
@@ -13,7 +11,7 @@ type CurrencyBalanceDTO struct {
 	Time       int64   `json:"time"`
 }
 
-func NewCurrencyBalanceDTO(model model.CurrencyBalance) *CurrencyBalanceDTO {
+func NewCurrencyBalanceDTO(model domain.CurrencyBalance) *CurrencyBalanceDTO {
 	return &CurrencyBalanceDTO{
 		Amount:     model.Amount,
 		BTCAmount:  model.BTCAmount,

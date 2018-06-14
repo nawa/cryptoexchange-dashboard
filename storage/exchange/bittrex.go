@@ -11,7 +11,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/toorop/go-bittrex"
 
-	"github.com/nawa/cryptoexchange-dashboard/model"
+	"github.com/nawa/cryptoexchange-dashboard/domain"
 	"github.com/nawa/cryptoexchange-dashboard/storage"
 	"github.com/nawa/cryptoexchange-dashboard/utils"
 )
@@ -35,7 +35,7 @@ func NewBittrexExchange(apiKey, apiSecret string) storage.Exchange {
 	}
 }
 
-func (be *bittrexExchange) GetBalance() (*model.Balance, error) {
+func (be *bittrexExchange) GetBalance() (*domain.Balance, error) {
 	var (
 		balances  []bittrex.Balance
 		converter *currencyConverter
@@ -61,7 +61,7 @@ func (be *bittrexExchange) GetBalance() (*model.Balance, error) {
 		return nil, err
 	}
 
-	result := &model.Balance{}
+	result := &domain.Balance{}
 	for _, b := range balances {
 		if b.Balance.GreaterThan(decimal.NewFromFloat(0)) {
 			btcBalance, err := converter.ConvertToBTC(b.Currency, b.Balance)
@@ -73,10 +73,10 @@ func (be *bittrexExchange) GetBalance() (*model.Balance, error) {
 				return nil, err
 			}
 
-			result.Exchange = model.ExchangeTypeBittrex
+			result.Exchange = domain.ExchangeTypeBittrex
 			result.Time = converter.syncTime
 			result.Currencies = append(result.Currencies,
-				model.CurrencyBalance{
+				domain.CurrencyBalance{
 					Currency:   b.Currency,
 					Amount:     utils.DecimalToFloatQuiet(b.Balance),
 					BTCAmount:  utils.DecimalToFloatQuiet(btcBalance),
@@ -90,7 +90,7 @@ func (be *bittrexExchange) GetBalance() (*model.Balance, error) {
 	return result, nil
 }
 
-func (be *bittrexExchange) GetMarketInfo(market string) (*model.MarketInfo, error) {
+func (be *bittrexExchange) GetMarketInfo(market string) (*domain.MarketInfo, error) {
 	marketSummary, err := be.bittrex.GetMarketSummary(market)
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (be *bittrexExchange) GetMarketInfo(market string) (*model.MarketInfo, erro
 		return nil, errors.New("got empty marketSummary list")
 	}
 
-	return &model.MarketInfo{
+	return &domain.MarketInfo{
 		MarketName: marketSummary[0].MarketName,
 		Last:       utils.DecimalToFloatQuiet(marketSummary[0].Last),
 		Bid:        utils.DecimalToFloatQuiet(marketSummary[0].Bid),
@@ -110,7 +110,7 @@ func (be *bittrexExchange) GetMarketInfo(market string) (*model.MarketInfo, erro
 	}, nil
 }
 
-func (be *bittrexExchange) GetOrders() ([]model.Order, error) {
+func (be *bittrexExchange) GetOrders() ([]domain.Order, error) {
 	var (
 		orders    []bittrex.Order
 		converter *currencyConverter
@@ -153,8 +153,8 @@ func (be *bittrexExchange) GetOrders() ([]model.Order, error) {
 	return be.convertOrders(filtered, converter), nil
 }
 
-func (be *bittrexExchange) convertOrders(bittrexOrders []bittrex.Order, converter *currencyConverter) []model.Order {
-	orders := []model.Order{}
+func (be *bittrexExchange) convertOrders(bittrexOrders []bittrex.Order, converter *currencyConverter) []domain.Order {
+	orders := []domain.Order{}
 	for _, order := range bittrexOrders {
 		toFrom := strings.Split(order.Exchange, "-")
 		if len(toFrom) != 2 {
@@ -174,8 +174,8 @@ func (be *bittrexExchange) convertOrders(bittrexOrders []bittrex.Order, converte
 			continue
 		}
 
-		orders = append(orders, model.Order{
-			Exchange:    model.ExchangeTypeBittrex,
+		orders = append(orders, domain.Order{
+			Exchange:    domain.ExchangeTypeBittrex,
 			Market:      order.Exchange,
 			Time:        order.TimeStamp.Time,
 			Amount:      utils.DecimalToFloatQuiet(order.Quantity),

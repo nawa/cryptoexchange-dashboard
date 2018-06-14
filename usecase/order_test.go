@@ -6,7 +6,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/golang/mock/gomock"
-	"github.com/nawa/cryptoexchange-dashboard/model"
+	"github.com/nawa/cryptoexchange-dashboard/domain"
 	"github.com/nawa/cryptoexchange-dashboard/storage"
 	"github.com/nawa/cryptoexchange-dashboard/storage/mocks"
 	"github.com/nawa/cryptoexchange-dashboard/usecase/testdata"
@@ -22,7 +22,7 @@ func TestOrderUsecases_GetActiveOrders(t *testing.T) {
 	tests := []struct {
 		name       string
 		fieldsF    func(ctrl *gomock.Controller) fields
-		wantOrders []model.Order
+		wantOrders []domain.Order
 		wantErr    bool
 	}{
 		{

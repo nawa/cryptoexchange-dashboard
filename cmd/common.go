@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/nawa/cryptoexchange-dashboard/model"
+	"github.com/nawa/cryptoexchange-dashboard/domain"
 	"github.com/nawa/cryptoexchange-dashboard/storage"
 	"github.com/nawa/cryptoexchange-dashboard/storage/exchange"
 	"github.com/nawa/cryptoexchange-dashboard/storage/mongo"
@@ -34,15 +34,15 @@ type MongoCommand struct {
 }
 
 func (c *ExchangeAPICommand) BindArgs(cobraCmd *cobra.Command) error {
-	cobraCmd.Flags().StringVarP(&c.ExchangeType, "exchange-type", "e", string(model.ExchangeTypeBittrex), fmt.Sprintf("Exchange type: [%s] (Only Bittrex is supported now)", model.ExchangeTypeBittrex))
+	cobraCmd.Flags().StringVarP(&c.ExchangeType, "exchange-type", "e", string(domain.ExchangeTypeBittrex), fmt.Sprintf("Exchange type: [%s] (Only Bittrex is supported now)", domain.ExchangeTypeBittrex))
 	cobraCmd.Flags().StringVarP(&c.APIKey, "api-key", "k", "", "API Key. Can be skipped and provided by environment variable EXCHANGE_API_KEY")
 	cobraCmd.Flags().StringVarP(&c.APISecret, "api-secret", "s", "", "API Secret. Can be skipped and provided by environment variable EXCHANGE_API_SECRET")
 	return nil
 }
 
 func (c *ExchangeAPICommand) CheckArgs() error {
-	if c.ExchangeType != string(model.ExchangeTypeBittrex) {
-		return fmt.Errorf("--exchange-type is wrong, supported values: [%s] (Only Bittrex is supported now)", model.ExchangeTypeBittrex)
+	if c.ExchangeType != string(domain.ExchangeTypeBittrex) {
+		return fmt.Errorf("--exchange-type is wrong, supported values: [%s] (Only Bittrex is supported now)", domain.ExchangeTypeBittrex)
 	}
 
 	if c.APIKey == "" {

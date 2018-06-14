@@ -5,14 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nawa/cryptoexchange-dashboard/domain"
 	"github.com/nawa/cryptoexchange-dashboard/utils"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/h2non/gock"
-	"github.com/nawa/cryptoexchange-dashboard/model"
 	"github.com/nawa/cryptoexchange-dashboard/storage/exchange/testdata"
 	assert "github.com/stretchr/testify/require"
-	bittrex "github.com/toorop/go-bittrex"
+	"github.com/toorop/go-bittrex"
 )
 
 const testAPIKey = "aaapppiiiKey"
@@ -59,7 +59,7 @@ func TestBittrexExchange_GetBalance(t *testing.T) {
 	tests := []struct {
 		name    string
 		fieldsF func() fields
-		want    *model.Balance
+		want    *domain.Balance
 		wantErr bool
 	}{
 		{
@@ -200,7 +200,7 @@ func TestBittrexExchange_GetBalance(t *testing.T) {
 	}
 }
 
-func modelBalancesEqual(got model.Balance, want model.Balance) bool {
+func modelBalancesEqual(got domain.Balance, want domain.Balance) bool {
 	var zeroTime time.Time
 	got.Time = zeroTime
 	for i := range got.Currencies {
@@ -221,7 +221,7 @@ func TestBittrexExchange_GetMarketInfo(t *testing.T) {
 		name    string
 		fieldsF func() fields
 		args    args
-		want    *model.MarketInfo
+		want    *domain.MarketInfo
 		wantErr bool
 	}{
 		{
@@ -306,7 +306,7 @@ func TestBittrexExchange_GetOrders(t *testing.T) {
 	tests := []struct {
 		name    string
 		fieldsF func() fields
-		want    []model.Order
+		want    []domain.Order
 		wantErr bool
 	}{
 		{
@@ -356,7 +356,7 @@ func TestBittrexExchange_GetOrders(t *testing.T) {
 					log:     utils.NewDevNullLog(),
 				}
 			},
-			want:    []model.Order{},
+			want:    []domain.Order{},
 			wantErr: false,
 		},
 		{

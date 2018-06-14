@@ -1,60 +1,14 @@
 package storage
 
-import (
-	"time"
-
-	"github.com/nawa/cryptoexchange-dashboard/model"
-)
+import "github.com/nawa/cryptoexchange-dashboard/domain"
 
 type BalanceStorage interface {
 	// Init initializes the storage, such as prepares indexes and another
 	Init() error
-	Save(balances ...Balance) error
-	FetchHourly(currency string, hours int) ([]Balance, error)
-	FetchWeekly(currency string) ([]Balance, error)
-	FetchMonthly(currency string) ([]Balance, error)
-	FetchAll(currency string) ([]Balance, error)
-	GetActiveCurrencies() ([]Balance, error)
-}
-
-type Balance struct {
-	Exchange   string    `bson:"exchange"`
-	Currency   string    `bson:"currency"`
-	Amount     float64   `bson:"amount"`
-	BTCAmount  float64   `bson:"btc_amount"`
-	USDTAmount float64   `bson:"usdt_amount"`
-	Time       time.Time `bson:"time"`
-}
-
-func NewBalances(b *model.Balance) (result []Balance) {
-	result = append(result, Balance{
-		Exchange:   string(b.Exchange),
-		Currency:   "total",
-		Amount:     b.BTCAmount,
-		BTCAmount:  b.BTCAmount,
-		USDTAmount: b.USDTAmount,
-		Time:       b.Time,
-	})
-
-	for _, c := range b.Currencies {
-		result = append(result, Balance{
-			Exchange:   string(b.Exchange),
-			Currency:   c.Currency,
-			Amount:     c.Amount,
-			BTCAmount:  c.BTCAmount,
-			USDTAmount: c.USDTAmount,
-			Time:       c.Time,
-		})
-	}
-	return result
-}
-
-func (b *Balance) ToModel() *model.CurrencyBalance {
-	return &model.CurrencyBalance{
-		Currency:   b.Currency,
-		Amount:     b.Amount,
-		BTCAmount:  b.BTCAmount,
-		USDTAmount: b.USDTAmount,
-		Time:       b.Time,
-	}
+	Save(*domain.Balance) error
+	FetchHourly(currency string, hours int) ([]domain.CurrencyBalance, error)
+	FetchWeekly(currency string) ([]domain.CurrencyBalance, error)
+	FetchMonthly(currency string) ([]domain.CurrencyBalance, error)
+	FetchAll(currency string) ([]domain.CurrencyBalance, error)
+	GetActiveCurrencies() ([]domain.CurrencyBalance, error)
 }

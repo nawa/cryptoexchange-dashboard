@@ -8,8 +8,8 @@ import (
 	"github.com/kataras/iris/httptest"
 	"github.com/pkg/errors"
 
+	"github.com/nawa/cryptoexchange-dashboard/domain"
 	"github.com/nawa/cryptoexchange-dashboard/http/testdata"
-	"github.com/nawa/cryptoexchange-dashboard/model"
 	"github.com/nawa/cryptoexchange-dashboard/usecase/mocks"
 )
 
@@ -65,7 +65,7 @@ func TestBalanceHandler_Hourly(t *testing.T) {
 			test: func(t *testing.T, mock *HTTPServerMock) {
 				mock.BalanceUC.EXPECT().
 					FetchHourly("CUR1", 1).
-					Return([]model.CurrencyBalance{}, nil)
+					Return([]domain.CurrencyBalance{}, nil)
 
 				response := mock.HTTPExpect.GET("/balance/period/hourly/1").
 					WithQuery("currency", "CUR1").
@@ -139,7 +139,7 @@ func TestBalanceHandler_Weekly(t *testing.T) {
 			test: func(t *testing.T, mock *HTTPServerMock) {
 				mock.BalanceUC.EXPECT().
 					FetchWeekly("CUR1").
-					Return([]model.CurrencyBalance{}, nil)
+					Return([]domain.CurrencyBalance{}, nil)
 
 				response := mock.HTTPExpect.GET("/balance/period/weekly").
 					WithQuery("currency", "CUR1").
@@ -194,7 +194,7 @@ func TestBalanceHandler_Monthly(t *testing.T) {
 			test: func(t *testing.T, mock *HTTPServerMock) {
 				mock.BalanceUC.EXPECT().
 					FetchMonthly("CUR1").
-					Return([]model.CurrencyBalance{}, nil)
+					Return([]domain.CurrencyBalance{}, nil)
 
 				response := mock.HTTPExpect.GET("/balance/period/monthly").
 					WithQuery("currency", "CUR1").
@@ -249,7 +249,7 @@ func TestBalanceHandler_All(t *testing.T) {
 			test: func(t *testing.T, mock *HTTPServerMock) {
 				mock.BalanceUC.EXPECT().
 					FetchAll("CUR1").
-					Return([]model.CurrencyBalance{}, nil)
+					Return([]domain.CurrencyBalance{}, nil)
 
 				response := mock.HTTPExpect.GET("/balance/period/all").
 					WithQuery("currency", "CUR1").

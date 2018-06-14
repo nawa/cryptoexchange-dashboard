@@ -1,10 +1,10 @@
 package storage
 
-import "github.com/nawa/cryptoexchange-dashboard/model"
+import "github.com/nawa/cryptoexchange-dashboard/domain"
 
 type Exchange interface {
-	GetBalance() (*model.Balance, error)
-	GetMarketInfo(market string) (*model.MarketInfo, error)
-	GetOrders() ([]model.Order, error)
+	GetBalance() (*domain.Balance, error)
+	GetMarketInfo(market string) (*domain.MarketInfo, error)
+	GetOrders() ([]domain.Order, error)
 	Ping() error
 }

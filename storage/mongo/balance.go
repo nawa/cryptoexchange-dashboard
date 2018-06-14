@@ -5,12 +5,23 @@ import (
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
+	"github.com/pkg/errors"
 
+	"github.com/nawa/cryptoexchange-dashboard/domain"
 	"github.com/nawa/cryptoexchange-dashboard/storage"
 )
 
 type balanceStorage struct {
 	baseStorage
+}
+
+type balance struct {
+	Exchange   string    `bson:"exchange"`
+	Currency   string    `bson:"currency"`
+	Amount     float64   `bson:"amount"`
+	BTCAmount  float64   `bson:"btc_amount"`
+	USDTAmount float64   `bson:"usdt_amount"`
+	Time       time.Time `bson:"time"`
 }
 
 func NewBalanceStorage(session *mgo.Session, refreshSession bool) storage.BalanceStorage {
@@ -59,18 +70,14 @@ func (s *balanceStorage) Init() (err error) {
 	return
 }
 
-func (s *balanceStorage) Save(balances ...storage.Balance) error {
+func (s *balanceStorage) Save(balance *domain.Balance) error {
 	db, closeSession := s.getDB()
 	defer closeSession()
 
-	convert := make([]interface{}, len(balances))
-	for i := range balances {
-		convert[i] = balances[i]
-	}
-	return db.C("balance").Insert(convert...)
+	return db.C("balance").Insert(convertBalanceFromModel(balance)...)
 }
 
-func (s *balanceStorage) FetchHourly(currency string, hours int) (balance []storage.Balance, err error) {
+func (s *balanceStorage) FetchHourly(currency string, hours int) ([]domain.CurrencyBalance, error) {
 	db, closeSession := s.getDB()
 	defer closeSession()
 
@@ -82,14 +89,20 @@ func (s *balanceStorage) FetchHourly(currency string, hours int) (balance []stor
 		},
 		"currency": currency,
 	}
-	err = db.C("balance").
+	var balances []balance
+
+	err := db.C("balance").
 		Find(q).
 		Sort("-time").
-		All(&balance)
-	return
+		All(&balances)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertBalanceSliceToModel(balances), nil
 }
 
-func (s *balanceStorage) FetchWeekly(currency string) (balance []storage.Balance, err error) {
+func (s *balanceStorage) FetchWeekly(currency string) ([]domain.CurrencyBalance, error) {
 	db, closeSession := s.getDB()
 	defer closeSession()
 
@@ -126,7 +139,7 @@ func (s *balanceStorage) FetchWeekly(currency string) (balance []storage.Balance
 	period := time.Now().Add(-1 * time.Hour * 24 * 7)
 
 	pipe := db.C("balance").Pipe([]bson.M{
-		bson.M{
+		{
 			"$match": bson.M{
 				"time": bson.M{
 					"$gte": period,
@@ -134,7 +147,7 @@ func (s *balanceStorage) FetchWeekly(currency string) (balance []storage.Balance
 				"currency": currency,
 			},
 		},
-		bson.M{
+		{
 			"$group": bson.M{
 				"_id": bson.M{
 					"year":  bson.M{"$year": "$time"},
@@ -143,8 +156,8 @@ func (s *balanceStorage) FetchWeekly(currency string) (balance []storage.Balance
 					"hour":  bson.M{"$hour": "$time"},
 					"each_5min": bson.M{
 						"$subtract": []bson.M{
-							bson.M{"$minute": "$time"},
-							bson.M{"$mod": []interface{}{bson.M{"$minute": "$time"}, 5}},
+							{"$minute": "$time"},
+							{"$mod": []interface{}{bson.M{"$minute": "$time"}, 5}},
 						},
 					},
 				},
@@ -154,16 +167,22 @@ func (s *balanceStorage) FetchWeekly(currency string) (balance []storage.Balance
 				"usdt_amount": bson.M{"$first": "$usdt_amount"},
 			},
 		},
-		bson.M{"$sort": bson.M{"time": -1}},
+		{"$sort": bson.M{"time": -1}},
 	})
 
-	err = pipe.
-		All(&balance)
+	var balances []balance
 
-	return
+	err := pipe.
+		All(&balances)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return convertBalanceSliceToModel(balances), nil
 }
 
-func (s *balanceStorage) FetchMonthly(currency string) (balance []storage.Balance, err error) {
+func (s *balanceStorage) FetchMonthly(currency string) ([]domain.CurrencyBalance, error) {
 	db, closeSession := s.getDB()
 	defer closeSession()
 
@@ -194,7 +213,7 @@ func (s *balanceStorage) FetchMonthly(currency string) (balance []storage.Balanc
 	period := time.Now().Add(-1 * time.Hour * 24 * 30)
 
 	pipe := db.C("balance").Pipe([]bson.M{
-		bson.M{
+		{
 			"$match": bson.M{
 				"time": bson.M{
 					"$gte": period,
@@ -202,7 +221,7 @@ func (s *balanceStorage) FetchMonthly(currency string) (balance []storage.Balanc
 				"currency": currency,
 			},
 		},
-		bson.M{
+		{
 			"$group": bson.M{
 				"_id": bson.M{
 					"year":  bson.M{"$year": "$time"},
@@ -216,20 +235,26 @@ func (s *balanceStorage) FetchMonthly(currency string) (balance []storage.Balanc
 				"usdt_amount": bson.M{"$first": "$usdt_amount"},
 			},
 		},
-		bson.M{"$sort": bson.M{"time": -1}},
+		{"$sort": bson.M{"time": -1}},
 	})
 
-	err = pipe.
-		All(&balance)
+	var balances []balance
 
-	return
+	err := pipe.
+		All(&balances)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return convertBalanceSliceToModel(balances), nil
 }
 
-func (s *balanceStorage) FetchAll(currency string) (balance []storage.Balance, err error) {
+func (s *balanceStorage) FetchAll(currency string) ([]domain.CurrencyBalance, error) {
 	panic("not implemented")
 }
 
-func (s *balanceStorage) GetActiveCurrencies() (balance []storage.Balance, err error) {
+func (s *balanceStorage) GetActiveCurrencies() ([]domain.CurrencyBalance, error) {
 	//TODO make in one call to mongo
 	db, closeSession := s.getDB()
 	defer closeSession()
@@ -239,27 +264,75 @@ func (s *balanceStorage) GetActiveCurrencies() (balance []storage.Balance, err e
 	}
 	var t []lastTime
 
-	err = db.C("balance").
+	err := db.C("balance").
 		Find(bson.M{}).
 		Sort("-time").
 		Limit(1).
 		All(&t)
 
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	if len(t) == 0 {
-		return
+		return nil, errors.New("last time not found for currency")
 	}
 
 	q := bson.M{
 		"time": t[0].Time,
 	}
 
+	var balances []balance
+
 	err = db.C("balance").
 		Find(q).
-		All(&balance)
+		All(&balances)
 
-	return
+	if err != nil {
+		return nil, err
+	}
+
+	return convertBalanceSliceToModel(balances), nil
+}
+
+func convertBalanceFromModel(b *domain.Balance) (result []interface{}) {
+	result = append(result, balance{
+		Exchange:   string(b.Exchange),
+		Currency:   "total",
+		Amount:     b.BTCAmount,
+		BTCAmount:  b.BTCAmount,
+		USDTAmount: b.USDTAmount,
+		Time:       b.Time,
+	})
+
+	for _, c := range b.Currencies {
+		result = append(result, balance{
+			Exchange:   string(b.Exchange),
+			Currency:   c.Currency,
+			Amount:     c.Amount,
+			BTCAmount:  c.BTCAmount,
+			USDTAmount: c.USDTAmount,
+			Time:       c.Time,
+		})
+	}
+	return result
+}
+
+func convertBalanceToModel(b *balance) *domain.CurrencyBalance {
+	return &domain.CurrencyBalance{
+		Currency:   b.Currency,
+		Amount:     b.Amount,
+		BTCAmount:  b.BTCAmount,
+		USDTAmount: b.USDTAmount,
+		Time:       b.Time,
+	}
+}
+
+func convertBalanceSliceToModel(balances []balance) []domain.CurrencyBalance {
+	res := make([]domain.CurrencyBalance, len(balances))
+	for i, b := range balances {
+		res[i] = *convertBalanceToModel(&b)
+	}
+
+	return res
 }

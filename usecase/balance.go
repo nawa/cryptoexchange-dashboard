@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/nawa/cryptoexchange-dashboard/domain"
 	"github.com/nawa/cryptoexchange-dashboard/usecase/ticker"
 
-	"github.com/nawa/cryptoexchange-dashboard/model"
 	"github.com/nawa/cryptoexchange-dashboard/storage"
 
 	"github.com/Sirupsen/logrus"
@@ -16,15 +16,15 @@ type BalanceUsecases interface {
 	StartSyncFromExchangePeriodically(period time.Duration) (stop func(), err error)
 	SyncFromExchange() error
 	// All records from the last N hours
-	FetchHourly(currency string, hours int) ([]model.CurrencyBalance, error)
+	FetchHourly(currency string, hours int) ([]domain.CurrencyBalance, error)
 	// Records from the last week with 5 min interval
-	FetchWeekly(currency string) ([]model.CurrencyBalance, error)
+	FetchWeekly(currency string) ([]domain.CurrencyBalance, error)
 	// Records from the last month with 1 hour interval
-	FetchMonthly(currency string) ([]model.CurrencyBalance, error)
+	FetchMonthly(currency string) ([]domain.CurrencyBalance, error)
 	//TODO // All records with 1 day???  interval
-	FetchAll(currency string) ([]model.CurrencyBalance, error)
+	FetchAll(currency string) ([]domain.CurrencyBalance, error)
 	// Get currency balances > 0
-	GetActiveCurrencies() ([]model.CurrencyBalance, error)
+	GetActiveCurrencies() ([]domain.CurrencyBalance, error)
 }
 
 type balanceUsecases struct {
@@ -61,7 +61,7 @@ func (u *balanceUsecases) SyncFromExchange() error {
 		return err
 	}
 
-	err = u.balanceStorage.Save(storage.NewBalances(balance)...)
+	err = u.balanceStorage.Save(balance)
 	if err != nil {
 		u.log.WithField("method", "SyncFromExchange").WithError(err).Error()
 		return err
@@ -78,63 +78,52 @@ func (u *balanceUsecases) SyncFromExchange() error {
 	return nil
 }
 
-func (u *balanceUsecases) FetchHourly(currency string, hours int) (balances []model.CurrencyBalance, err error) {
-	stBalances, err := u.balanceStorage.FetchHourly(currency, hours)
+func (u *balanceUsecases) FetchHourly(currency string, hours int) ([]domain.CurrencyBalance, error) {
+	balances, err := u.balanceStorage.FetchHourly(currency, hours)
 	if err != nil {
 		u.log.WithField("method", "FetchHourly").WithError(err).Error()
-		return
+		return nil, err
 	}
-	for _, b := range stBalances {
-		balances = append(balances, *b.ToModel())
-	}
-	return
+
+	return balances, nil
 }
 
-func (u *balanceUsecases) FetchWeekly(currency string) (balances []model.CurrencyBalance, err error) {
-	stBalances, err := u.balanceStorage.FetchWeekly(currency)
+func (u *balanceUsecases) FetchWeekly(currency string) ([]domain.CurrencyBalance, error) {
+	balances, err := u.balanceStorage.FetchWeekly(currency)
 	if err != nil {
 		u.log.WithField("method", "FetchWeekly").WithError(err).Error()
-		return
+		return nil, err
 	}
-	for _, b := range stBalances {
-		balances = append(balances, *b.ToModel())
-	}
-	return
+
+	return balances, nil
 }
 
-func (u *balanceUsecases) FetchMonthly(currency string) (balances []model.CurrencyBalance, err error) {
-	stBalances, err := u.balanceStorage.FetchMonthly(currency)
+func (u *balanceUsecases) FetchMonthly(currency string) ([]domain.CurrencyBalance, error) {
+	balances, err := u.balanceStorage.FetchMonthly(currency)
 	if err != nil {
 		u.log.WithField("method", "FetchMonthly").WithError(err).Error()
-		return
+		return nil, err
 	}
-	for _, b := range stBalances {
-		balances = append(balances, *b.ToModel())
-	}
-	return
+
+	return balances, nil
 }
 
-func (u *balanceUsecases) FetchAll(currency string) (balances []model.CurrencyBalance, err error) {
-	stBalances, err := u.balanceStorage.FetchAll(currency)
+func (u *balanceUsecases) FetchAll(currency string) ([]domain.CurrencyBalance, error) {
+	balances, err := u.balanceStorage.FetchAll(currency)
 	if err != nil {
 		u.log.WithField("method", "FetchAll").WithError(err).Error()
-		return
+		return nil, err
 	}
-	for _, b := range stBalances {
-		balances = append(balances, *b.ToModel())
-	}
-	return
+
+	return balances, nil
 }
 
-func (u *balanceUsecases) GetActiveCurrencies() (balances []model.CurrencyBalance, err error) {
-	stBalances, err := u.balanceStorage.GetActiveCurrencies()
-
+func (u *balanceUsecases) GetActiveCurrencies() ([]domain.CurrencyBalance, error) {
+	balances, err := u.balanceStorage.GetActiveCurrencies()
 	if err != nil {
-		u.log.WithField("method", "FetchAll").WithError(err).Error()
-		return
+		u.log.WithField("method", "GetActiveCurrencies").WithError(err).Error()
+		return nil, err
 	}
-	for _, b := range stBalances {
-		balances = append(balances, *b.ToModel())
-	}
-	return
+
+	return balances, nil
 }

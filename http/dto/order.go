@@ -1,8 +1,6 @@
 package dto
 
-import (
-	"github.com/nawa/cryptoexchange-dashboard/model"
-)
+import "github.com/nawa/cryptoexchange-dashboard/domain"
 
 type OrderDTO struct {
 	Market      string  `json:"market"`
@@ -14,9 +12,9 @@ type OrderDTO struct {
 	USDTRate    float64 `json:"usdt_rate"`
 }
 
-func NewOrderDTO(m model.Order) *OrderDTO {
+func NewOrderDTO(m domain.Order) *OrderDTO {
 	var marketLink string
-	if m.Exchange == model.ExchangeTypeBittrex {
+	if m.Exchange == domain.ExchangeTypeBittrex {
 		marketLink = "https://bittrex.com/Market/Index?MarketName=" + m.Market
 	}
 	return &OrderDTO{

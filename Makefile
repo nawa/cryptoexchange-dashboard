@@ -20,9 +20,10 @@ linter:
 
 mockgen:
 	@ echo "-> Generate mocks for tests ..."
-	# @ mockgen -source storage/balance.go -package mock_data -destination storage/mock_data/balance_mock.go
-	# @ mockgen -source storage/exchange.go -package mock_data -destination storage/mock_data/exchange_mock.go
-	# mockgen -source usecase/balance.go -package mock_data -destination usecase/mock_data/balance_mock.go
+	mockgen -source storage/balance.go -package mocks -destination storage/mocks/balance_mock.go
+	mockgen -source storage/exchange.go -package mocks -destination storage/mocks/exchange_mock.go
+	mockgen -source usecase/balance.go -package mocks -destination usecase/mocks/balance_mock.go
+	mockgen -source usecase/order.go -package mocks -destination usecase/mocks/order_mock.go
 .PHONY: mockgen
 
 test:
