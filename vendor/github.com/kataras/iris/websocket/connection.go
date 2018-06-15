@@ -125,7 +125,7 @@ type (
 	// (because websocket server automatically leaves from all joined rooms)
 	LeaveRoomFunc func(roomName string)
 	// ErrorFunc is the callback which fires whenever an error occurs
-	ErrorFunc (func(string))
+	ErrorFunc (func(error))
 	// NativeMessageFunc is the callback for native websocket messages, receives one []byte parameter which is the raw client's message
 	NativeMessageFunc func([]byte)
 	// MessageFunc is the second argument to the Emitter's Emit functions.
@@ -133,6 +133,8 @@ type (
 	MessageFunc interface{}
 	// PingFunc is the callback which fires each ping
 	PingFunc func()
+	// PongFunc is the callback which fires on pong message received
+	PongFunc func()
 	// Connection is the front-end API that you will use to communicate with the client side
 	Connection interface {
 		// Emitter implements EmitMessage & Emit
@@ -149,6 +151,10 @@ type (
 		// Its connection-relative operations are safe for use.
 		Server() *Server
 
+		// Write writes a raw websocket message with a specific type to the client
+		// used by ping messages and any CloseMessage types.
+		Write(websocketMessageType int, data []byte) error
+
 		// Context returns the (upgraded) context.Context of this connection
 		// avoid using it, you normally don't need it,
 		// websocket has everything you need to authenticate the user BUT if it's necessary
@@ -161,10 +167,12 @@ type (
 		OnError(ErrorFunc)
 		// OnPing  registers a callback which fires on each ping
 		OnPing(PingFunc)
+		// OnPong  registers a callback which fires on pong message received
+		OnPong(PongFunc)
 		// FireOnError can be used to send a custom error message to the connection
 		//
 		// It does nothing more than firing the OnError listeners. It doesn't send anything to the client.
-		FireOnError(errorMessage string)
+		FireOnError(err error)
 		// To defines on what "room" (see Join) the server should send a message
 		// returns an Emmiter(`EmitMessage` & `Emit`) to send messages.
 		To(string) Emitter
@@ -217,6 +225,7 @@ type (
 		onRoomLeaveListeners     []LeaveRoomFunc
 		onErrorListeners         []ErrorFunc
 		onPingListeners          []PingFunc
+		onPongListeners          []PongFunc
 		onNativeMessageListeners []NativeMessageFunc
 		onEventListeners         map[string][]MessageFunc
 		started                  bool
@@ -240,6 +249,13 @@ type (
 
 var _ Connection = &connection{}
 
+// CloseMessage denotes a close control message. The optional message
+// payload contains a numeric code and text. Use the FormatCloseMessage
+// function to format a close message payload.
+//
+// Use the `Connection#Disconnect` instead.
+const CloseMessage = websocket.CloseMessage
+
 func newConnection(ctx context.Context, s *Server, underlineConn UnderlineConnection, id string) *connection {
 	c := &connection{
 		underline:                underlineConn,
@@ -250,6 +266,7 @@ func newConnection(ctx context.Context, s *Server, underlineConn UnderlineConnec
 		onErrorListeners:         make([]ErrorFunc, 0),
 		onNativeMessageListeners: make([]NativeMessageFunc, 0),
 		onEventListeners:         make(map[string][]MessageFunc, 0),
+		onPongListeners:          make([]PongFunc, 0),
 		started:                  false,
 		ctx:                      ctx,
 		server:                   s,
@@ -271,9 +288,9 @@ func (c *connection) Err() error {
 	return c.err
 }
 
-// write writes a raw websocket message with a specific type to the client
+// Write writes a raw websocket message with a specific type to the client
 // used by ping messages and any CloseMessage types.
-func (c *connection) write(websocketMessageType int, data []byte) error {
+func (c *connection) Write(websocketMessageType int, data []byte) error {
 	// for any-case the app tries to write from different goroutines,
 	// we must protect them because they're reporting that as bug...
 	c.writerMu.Lock()
@@ -295,7 +312,7 @@ func (c *connection) write(websocketMessageType int, data []byte) error {
 // writeDefault is the same as write but the message type is the configured by c.messageType
 // if BinaryMessages is enabled then it's raw []byte as you expected to work with protobufs
 func (c *connection) writeDefault(data []byte) {
-	c.write(c.messageType, data)
+	c.Write(c.messageType, data)
 }
 
 const (
@@ -332,7 +349,7 @@ func (c *connection) startPinger() {
 			//fire all OnPing methods
 			c.fireOnPing()
 			// try to ping the client, if failed then it disconnects
-			err := c.write(websocket.PingMessage, []byte{})
+			err := c.Write(websocket.PingMessage, []byte{})
 			if err != nil {
 				// must stop to exit the loop and finish the go routine
 				break
@@ -348,6 +365,13 @@ func (c *connection) fireOnPing() {
 	}
 }
 
+func (c *connection) fireOnPong() {
+	// fire the onPongListeners
+	for i := range c.onPongListeners {
+		c.onPongListeners[i]()
+	}
+}
+
 func (c *connection) startReader() {
 	conn := c.underline
 	hasReadTimeout := c.server.config.ReadTimeout > 0
@@ -357,6 +381,8 @@ func (c *connection) startReader() {
 		if hasReadTimeout {
 			conn.SetReadDeadline(time.Now().Add(c.server.config.ReadTimeout))
 		}
+		//fire all OnPong methods
+		go c.fireOnPong()
 
 		return nil
 	})
@@ -374,7 +400,7 @@ func (c *connection) startReader() {
 		_, data, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
-				c.FireOnError(err.Error())
+				c.FireOnError(err)
 			}
 			break
 		} else {
@@ -467,9 +493,13 @@ func (c *connection) OnPing(cb PingFunc) {
 	c.onPingListeners = append(c.onPingListeners, cb)
 }
 
-func (c *connection) FireOnError(errorMessage string) {
+func (c *connection) OnPong(cb PongFunc) {
+	c.onPongListeners = append(c.onPongListeners, cb)
+}
+
+func (c *connection) FireOnError(err error) {
 	for _, cb := range c.onErrorListeners {
-		cb(errorMessage)
+		cb(err)
 	}
 }
 
@@ -481,6 +511,7 @@ func (c *connection) To(to string) Emitter {
 	} else if to == c.id {
 		return c.self
 	}
+
 	// is an emitter to another client/connection
 	return newEmitter(c, to)
 }

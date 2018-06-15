@@ -54,6 +54,8 @@ type mongoSocket struct {
 	dead           error
 	serverInfo     *mongoServerInfo
 	closeAfterIdle bool
+	lastTimeUsed   time.Time // for time based idle socket release
+	sendMeta       sync.Once
 }
 
 type queryOpFlags uint32

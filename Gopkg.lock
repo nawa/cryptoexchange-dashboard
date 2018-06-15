@@ -17,13 +17,13 @@
   branch = "master"
   name = "github.com/Joker/jade"
   packages = ["."]
-  revision = "35b3f5bdbcc920cd31f4870536dbc63be8530541"
+  revision = "8828253bfc54f2f91aaef5f32b44a244b0a98e4f"
 
 [[projects]]
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
-  revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
-  version = "v1.0.4"
+  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
+  version = "v1.0.5"
 
 [[projects]]
   name = "github.com/ajg/form"
@@ -35,7 +35,7 @@
   branch = "master"
   name = "github.com/aymerick/raymond"
   packages = [".","ast","lexer","parser"]
-  revision = "72acac2207479d21dd45898c2a4264246c818148"
+  revision = "b565731e1464263de0bda75f2e45d97b54b60110"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -59,7 +59,7 @@
   branch = "master"
   name = "github.com/flosch/pongo2"
   packages = ["."]
-  revision = "1f4be1efe3b3529b7e58861f75d70120a9567dc4"
+  revision = "67f4ff8560dfa2b00920118f228c0a2f68760631"
 
 [[projects]]
   branch = "master"
@@ -71,13 +71,13 @@
   branch = "master"
   name = "github.com/globalsign/mgo"
   packages = [".","bson","internal/json","internal/sasl","internal/scram"]
-  revision = "896bbb89d21253a28cd5a7f8b81fe091410cb94d"
+  revision = "efe0945164a7e582241f37ae8983c075f8f2e870"
 
 [[projects]]
   branch = "master"
   name = "github.com/golang/mock"
   packages = ["gomock"]
-  revision = "58cd061d09382b6011f84c1291ebe50ef2e25bab"
+  revision = "22bbf0ddf08105dfa364d0a2fa619dfa71014af5"
 
 [[projects]]
   branch = "master"
@@ -94,8 +94,8 @@
 [[projects]]
   name = "github.com/h2non/gock"
   packages = ["."]
-  revision = "26775f23aa9da4cbd47bc2600a57ac07bbf3bd20"
-  version = "v1.0.7"
+  revision = "4692cba4394f79372bfe85996501ad43db9d82e0"
+  version = "v1.0.9"
 
 [[projects]]
   branch = "master"
@@ -113,7 +113,7 @@
   branch = "master"
   name = "github.com/hashicorp/go-version"
   packages = ["."]
-  revision = "4fe82ae3040f80a03d04d2cccb5606a626b8e1ee"
+  revision = "23480c0665776210b5fbbac6eaaee40e3e6a96b7"
 
 [[projects]]
   name = "github.com/imkira/go-interpol"
@@ -137,7 +137,7 @@
   branch = "master"
   name = "github.com/iris-contrib/httpexpect"
   packages = ["."]
-  revision = "65e93247e7071782e760f82086e8b677cca0c78a"
+  revision = "ebe99fcebbcedf6e7916320cce24c3e1832766ac"
 
 [[projects]]
   name = "github.com/iris-contrib/middleware"
@@ -149,7 +149,7 @@
   branch = "master"
   name = "github.com/json-iterator/go"
   packages = ["."]
-  revision = "002b5ae34214fdc0bad508c2ed6f572fa96dfdda"
+  revision = "f2b4162afba35581b6d4a50d3b8f34e33c144682"
 
 [[projects]]
   branch = "master"
@@ -161,25 +161,25 @@
   branch = "master"
   name = "github.com/kataras/golog"
   packages = ["."]
-  revision = "85424b54aeb661d802fad5c305f0e4406a89ade2"
+  revision = "03be101463868edc5a81f094fc68a5f6c1b5503a"
 
 [[projects]]
   name = "github.com/kataras/iris"
-  packages = [".","cache","cache/cfg","cache/client","cache/client/rule","cache/entry","cache/ruleset","cache/uri","context","core/errors","core/handlerconv","core/host","core/maintenance","core/maintenance/client","core/maintenance/encoding","core/maintenance/version","core/memstore","core/netutil","core/router","core/router/macro","core/router/macro/interpreter/ast","core/router/macro/interpreter/lexer","core/router/macro/interpreter/parser","core/router/macro/interpreter/token","core/router/node","hero","hero/di","httptest","middleware/logger","middleware/recover","mvc","sessions","view"]
-  revision = "2546d8bca00d42e7dbcc63d8dbbcfc0735808600"
-  version = "v10.2.0"
+  packages = [".","cache","cache/cfg","cache/client","cache/client/rule","cache/entry","cache/ruleset","cache/uri","context","core/errors","core/handlerconv","core/host","core/maintenance","core/maintenance/version","core/memstore","core/netutil","core/router","core/router/macro","core/router/macro/interpreter/ast","core/router/macro/interpreter/lexer","core/router/macro/interpreter/parser","core/router/macro/interpreter/token","core/router/node","httptest","middleware/logger","middleware/recover","view"]
+  revision = "964fba44cf4f4b2e94b2cbd54fbbf4d264795df7"
+  version = "v10.6.6"
 
 [[projects]]
   branch = "master"
   name = "github.com/kataras/pio"
   packages = [".","terminal"]
-  revision = "825e39f34365e7db2c9fbc3692c16220e3bd7418"
+  revision = "a9733b5b6b83d32b479aacd51d26ef6018261963"
 
 [[projects]]
-  branch = "master"
   name = "github.com/kataras/survey"
-  packages = [".","core","terminal"]
-  revision = "00934ae069eda15df26fa427ac393e67e239380c"
+  packages = ["."]
+  revision = "18a4dbb1d9d05349aea1a2bf9c84028c36817c10"
+  version = "v1.3.4"
 
 [[projects]]
   name = "github.com/klauspost/compress"
@@ -221,7 +221,19 @@
   branch = "master"
   name = "github.com/microcosm-cc/bluemonday"
   packages = ["."]
-  revision = "542fd4642604d0d0c26112396ce5b1a9d01eee0b"
+  revision = "995366fdf961d03629cd17361bddd32745718e2c"
+
+[[projects]]
+  name = "github.com/modern-go/concurrent"
+  packages = ["."]
+  revision = "bacd9c7ef1dd9b15be4a9909b8ac7a4e313eec94"
+  version = "1.0.3"
+
+[[projects]]
+  name = "github.com/modern-go/reflect2"
+  packages = ["."]
+  revision = "1df9eeb2bb81f327b96228865c5687bc2194af3f"
+  version = "1.0.0"
 
 [[projects]]
   branch = "master"
@@ -244,8 +256,8 @@
 [[projects]]
   name = "github.com/rs/cors"
   packages = ["."]
-  revision = "7af7a1e09ba336d2ea14b1ce73bf693c6837dbf6"
-  version = "v1.2"
+  revision = "ca016a06a5753f8ba03029c0aa5e54afb1bf713f"
+  version = "v1.4.0"
 
 [[projects]]
   branch = "master"
@@ -254,9 +266,10 @@
   revision = "abc90934186a77966e2beeac62ed966aac0561d5"
 
 [[projects]]
+  branch = "master"
   name = "github.com/satori/go.uuid"
   packages = ["."]
-  revision = "5bf94b69c6b68ee1b541973bb8e1144db23a194b"
+  revision = "36e9d2ebbde5e3f13ab2e25625fd453271d6522e"
 
 [[projects]]
   name = "github.com/sergi/go-diff"
@@ -267,8 +280,8 @@
 [[projects]]
   name = "github.com/shopspring/decimal"
   packages = ["."]
-  revision = "9ca7f51822d222ae4e246f070f9aad863599bd1a"
-  version = "1.0.0"
+  revision = "69b3a8ad1f5f2c8bd855cb6506d18593064a346b"
+  version = "1.0.1"
 
 [[projects]]
   branch = "master"
@@ -279,20 +292,20 @@
 [[projects]]
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "7b2c5ac9fc04fc5efafb60700713d4fa609b777b"
-  version = "v0.0.1"
+  revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
+  version = "v0.0.3"
 
 [[projects]]
   name = "github.com/spf13/pflag"
   packages = ["."]
-  revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
-  version = "v1.0.0"
+  revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
+  version = "v1.0.1"
 
 [[projects]]
   name = "github.com/stretchr/testify"
   packages = ["assert","require"]
-  revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
-  version = "v1.2.1"
+  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
+  version = "v1.2.2"
 
 [[projects]]
   branch = "master"
@@ -322,13 +335,13 @@
   branch = "master"
   name = "github.com/xeipuuv/gojsonschema"
   packages = ["."]
-  revision = "8bcffc811467a5f691810420385be6e66b35a317"
+  revision = "9ff6d6c47f3f5de55acc6f464d6e3719b02818ae"
 
 [[projects]]
   branch = "master"
   name = "github.com/yalp/jsonpath"
   packages = ["."]
-  revision = "024efa345fa9e1e6574b31ca937d71fd09da80d1"
+  revision = "91a5860ab683d85ac38cbb7cb466a17a673b6ae5"
 
 [[projects]]
   name = "github.com/yudai/gojsondiff"
@@ -346,19 +359,19 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["acme","acme/autocert","ssh/terminal"]
-  revision = "9de5f2eaf759b4c4550b3db39fed2e9e5f86f45c"
+  revision = "a8fb68e7206f8c78be19b432c58eb52a6aa34462"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context","html","html/atom","idna","publicsuffix"]
-  revision = "f5dfe339be1d06f81b22525fe34671ee7d2c8904"
+  revision = "db08ff08e8622530d9ed3a0e8ac279f6d4c02196"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
-  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
+  revision = "8883426083c04a2627e6e59d84d5f6fb63d16c91"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -367,20 +380,26 @@
   version = "v0.3.0"
 
 [[projects]]
-  branch = "v2"
-  name = "gopkg.in/russross/blackfriday.v2"
-  packages = ["."]
-  revision = "119f356b88f847465545338f0108347453ae0b03"
+  name = "gopkg.in/AlecAivazis/survey.v1"
+  packages = ["core","terminal"]
+  revision = "e752db451e07e09c7d7dc8cada807a44bdb0fd47"
+  version = "v1.5.3"
 
 [[projects]]
   branch = "v2"
+  name = "gopkg.in/russross/blackfriday.v2"
+  packages = ["."]
+  revision = "670777b536d38a1aef1d517f6330a77d52ceb02e"
+
+[[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "d670f9405373e636a5a2765eea47fac0c9bc91a4"
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "03adcc1a12f0979613ec6001d1278a0edd673abc688698c8b375ead4a524e2ec"
+  inputs-digest = "3d2e1adb7a4c9bb91f2d9793932ce51620f3ad8b6df3872bb0fa87dd98a67beb"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -30,11 +30,13 @@ import (
 	"flag"
 	"fmt"
 	"math"
+	"math/rand"
 	"os"
 	"runtime"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -164,6 +166,90 @@ func (s *S) TestURLInvalidReadPreference(c *C) {
 		_, err := mgo.ParseURL(url)
 		c.Assert(err, NotNil)
 	}
+}
+
+func (s *S) TestMinPoolSize(c *C) {
+	tests := []struct {
+		url  string
+		size int
+		fail bool
+	}{
+		{"localhost:40001?minPoolSize=0", 0, false},
+		{"localhost:40001?minPoolSize=1", 1, false},
+		{"localhost:40001?minPoolSize=-1", -1, true},
+		{"localhost:40001?minPoolSize=-.", 0, true},
+	}
+	for _, test := range tests {
+		info, err := mgo.ParseURL(test.url)
+		if test.fail {
+			c.Assert(err, NotNil)
+		} else {
+			c.Assert(err, IsNil)
+			c.Assert(info.MinPoolSize, Equals, test.size)
+		}
+	}
+}
+
+func (s *S) TestMaxIdleTimeMS(c *C) {
+	tests := []struct {
+		url  string
+		size int
+		fail bool
+	}{
+		{"localhost:40001?maxIdleTimeMS=0", 0, false},
+		{"localhost:40001?maxIdleTimeMS=1", 1, false},
+		{"localhost:40001?maxIdleTimeMS=-1", -1, true},
+		{"localhost:40001?maxIdleTimeMS=-.", 0, true},
+	}
+	for _, test := range tests {
+		info, err := mgo.ParseURL(test.url)
+		if test.fail {
+			c.Assert(err, NotNil)
+		} else {
+			c.Assert(err, IsNil)
+			c.Assert(info.MaxIdleTimeMS, Equals, test.size)
+		}
+	}
+}
+
+func (s *S) TestPoolShrink(c *C) {
+	if *fast {
+		c.Skip("-fast")
+	}
+	oldSocket := mgo.GetStats().SocketsAlive
+
+	session, err := mgo.Dial("localhost:40001?minPoolSize=1&maxIdleTimeMS=1000")
+	c.Assert(err, IsNil)
+	defer session.Close()
+
+	parallel := 10
+	res := make(chan error, parallel+1)
+	wg := &sync.WaitGroup{}
+	for i := 1; i < parallel; i++ {
+		wg.Add(1)
+		go func() {
+			s := session.Copy()
+			defer s.Close()
+			result := struct{}{}
+			err := s.Run("ping", &result)
+
+			//sleep random time to make the allocate and release in different sequence
+			time.Sleep(time.Duration(rand.Intn(parallel)*100) * time.Millisecond)
+			res <- err
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	stats := mgo.GetStats()
+	c.Logf("living socket: After queries: %d, before queries: %d", stats.SocketsAlive, oldSocket)
+
+	// give some time for shrink the pool, the tick is set to 1 minute
+	c.Log("Sleeping... 1 minute to for pool shrinking")
+	time.Sleep(60 * time.Second)
+
+	stats = mgo.GetStats()
+	c.Logf("living socket: After shrinking: %d, at the beginning of the test: %d", stats.SocketsAlive, oldSocket)
+	c.Assert(stats.SocketsAlive-oldSocket > 1, Equals, false)
 }
 
 func (s *S) TestURLReadPreferenceTags(c *C) {
@@ -4529,6 +4615,36 @@ func (s *S) TestPipeExplain(c *C) {
 	err = pipe.Explain(&result)
 	c.Assert(err, IsNil)
 	c.Assert(result.Ok, Equals, 1)
+}
+
+func (s *S) TestPipeCollation(c *C) {
+	if !s.versionAtLeast(2, 1) {
+		c.Skip("Pipe only works on 2.1+")
+	}
+	if !s.versionAtLeast(3, 3, 12) {
+		c.Skip("collations being released with 3.4")
+	}
+
+	session, err := mgo.Dial("localhost:40001")
+	c.Assert(err, IsNil)
+	defer session.Close()
+
+	coll := session.DB("mydb").C("mycoll")
+	beatles := []string{"John", "RINGO", "George", "Paul"}
+	for _, n := range beatles {
+		err := coll.Insert(M{"name": n})
+		c.Assert(err, IsNil)
+	}
+
+	collation := &mgo.Collation{
+		Locale:   "en",
+		Strength: 1, // ignore case/diacritics
+	}
+	var result []struct{ Name string }
+	err = coll.Pipe([]M{{"$match": M{"name": "ringo"}}}).Collation(collation).All(&result)
+	c.Assert(err, IsNil)
+	c.Assert(len(result), Equals, 1)
+	c.Assert(result[0].Name, Equals, "RINGO")
 }
 
 func (s *S) TestBatch1Bug(c *C) {

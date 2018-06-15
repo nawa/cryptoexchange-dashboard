@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"gopkg.in/yaml.v2"
 )
 
 // $ go test -v -run TestConfiguration*
@@ -30,7 +32,7 @@ func TestConfigurationStatic(t *testing.T) {
 
 	afterNew = *app.config
 
-	if app.config.DisableBodyConsumptionOnUnmarshal == false {
+	if !app.config.DisableBodyConsumptionOnUnmarshal {
 		t.Fatalf("Passing a Configuration field as Option fails, expected DisableBodyConsumptionOnUnmarshal to be true but was false")
 	}
 
@@ -89,7 +91,30 @@ func TestConfigurationOptionsDeep(t *testing.T) {
 		t.Fatalf("DEEP configuration is not the same after New expected:\n %#v \ngot:\n %#v", expected, has)
 	}
 }
+
+func createGlobalConfiguration(t *testing.T) {
+	filename := homeConfigurationFilename(".yml")
+	c, err := parseYAML(filename)
+	if err != nil {
+		// this error will be occurred the first time that the configuration
+		// file doesn't exist.
+		// Create the YAML-ONLY global configuration file now using the default configuration 'c'.
+		// This is useful when we run multiple iris servers that share the same
+		// configuration, even with custom values at its "Other" field.
+		out, err := yaml.Marshal(&c)
+
+		if err == nil {
+			err = ioutil.WriteFile(filename, out, os.FileMode(0666))
+		}
+		if err != nil {
+			t.Fatalf("error while writing the global configuration field at: %s. Trace: %v\n", filename, err)
+		}
+	}
+}
+
 func TestConfigurationGlobal(t *testing.T) {
+	createGlobalConfiguration(t)
+
 	testConfigurationGlobal(t, WithGlobalConfiguration)
 	// globalConfigurationKeyword = "~""
 	testConfigurationGlobal(t, WithConfiguration(YAML(globalConfigurationKeyword)))

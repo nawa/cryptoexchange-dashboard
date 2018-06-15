@@ -48,21 +48,23 @@ import (
 
 type mongoCluster struct {
 	sync.RWMutex
-	serverSynced sync.Cond
-	userSeeds    []string
-	dynaSeeds    []string
-	servers      mongoServers
-	masters      mongoServers
-	references   int
-	syncing      bool
-	direct       bool
-	failFast     bool
-	syncCount    uint
-	setName      string
-	cachedIndex  map[string]bool
-	sync         chan bool
-	dial         dialer
-	appName      string
+	serverSynced  sync.Cond
+	userSeeds     []string
+	dynaSeeds     []string
+	servers       mongoServers
+	masters       mongoServers
+	references    int
+	syncing       bool
+	direct        bool
+	failFast      bool
+	syncCount     uint
+	setName       string
+	cachedIndex   map[string]bool
+	sync          chan bool
+	dial          dialer
+	appName       string
+	minPoolSize   int
+	maxIdleTimeMS int
 }
 
 func newCluster(userSeeds []string, direct, failFast bool, dial dialer, setName string, appName string) *mongoCluster {
@@ -148,16 +150,38 @@ func (cluster *mongoCluster) isMaster(socket *mongoSocket, result *isMasterResul
 	session := newSession(Monotonic, cluster, 10*time.Second)
 	session.setSocket(socket)
 
-	// provide some meta infos on the client,
-	// see https://github.com/mongodb/specifications/blob/master/source/mongodb-handshake/handshake.rst#connection-handshake
-	// for details
-	metaInfo := bson.M{"driver": bson.M{"name": "mgo", "version": "globalsign"},
-		"os": bson.M{"type": runtime.GOOS, "architecture": runtime.GOARCH}}
+	var cmd = bson.D{{Name: "isMaster", Value: 1}}
 
-	if cluster.appName != "" {
-		metaInfo["application"] = bson.M{"name": cluster.appName}
-	}
-	err := session.Run(bson.D{{Name: "isMaster", Value: 1}, {Name: "client", Value: metaInfo}}, result)
+	// Send client metadata to the server to identify this socket if this is
+	// the first isMaster call only.
+	//
+	// 		isMaster commands issued after the initial connection handshake MUST NOT contain handshake arguments
+	// 		https://github.com/mongodb/specifications/blob/master/source/mongodb-handshake/handshake.rst#connection-handshake
+	//
+	socket.sendMeta.Do(func() {
+		var meta = bson.M{
+			"driver": bson.M{
+				"name":    "mgo",
+				"version": "globalsign",
+			},
+			"os": bson.M{
+				"type":         runtime.GOOS,
+				"architecture": runtime.GOARCH,
+			},
+		}
+
+		// Include the application name if set
+		if cluster.appName != "" {
+			meta["application"] = bson.M{"name": cluster.appName}
+		}
+
+		cmd = append(cmd, bson.DocElem{
+			Name:  "client",
+			Value: meta,
+		})
+	})
+
+	err := session.runOnSocket(socket, cmd, result)
 	session.Close()
 	return err
 }
@@ -415,11 +439,13 @@ func (cluster *mongoCluster) syncServersLoop() {
 func (cluster *mongoCluster) server(addr string, tcpaddr *net.TCPAddr) *mongoServer {
 	cluster.RLock()
 	server := cluster.servers.Search(tcpaddr.String())
+	minPoolSize := cluster.minPoolSize
+	maxIdleTimeMS := cluster.maxIdleTimeMS
 	cluster.RUnlock()
 	if server != nil {
 		return server
 	}
-	return newServer(addr, tcpaddr, cluster.sync, cluster.dial)
+	return newServer(addr, tcpaddr, cluster.sync, cluster.dial, minPoolSize, maxIdleTimeMS)
 }
 
 func resolveAddr(addr string) (*net.TCPAddr, error) {
@@ -592,9 +618,17 @@ func (cluster *mongoCluster) syncServersIteration(direct bool) {
 // true, it will attempt to return a socket to a slave server.  If it is
 // false, the socket will necessarily be to a master server.
 func (cluster *mongoCluster) AcquireSocket(mode Mode, slaveOk bool, syncTimeout time.Duration, socketTimeout time.Duration, serverTags []bson.D, poolLimit int) (s *mongoSocket, err error) {
+	return cluster.AcquireSocketWithPoolTimeout(mode, slaveOk, syncTimeout, socketTimeout, serverTags, poolLimit, 0)
+}
+
+// AcquireSocketWithPoolTimeout returns a socket to a server in the cluster.  If slaveOk is
+// true, it will attempt to return a socket to a slave server.  If it is
+// false, the socket will necessarily be to a master server.
+func (cluster *mongoCluster) AcquireSocketWithPoolTimeout(
+	mode Mode, slaveOk bool, syncTimeout time.Duration, socketTimeout time.Duration, serverTags []bson.D, poolLimit int, poolTimeout time.Duration,
+) (s *mongoSocket, err error) {
 	var started time.Time
 	var syncCount uint
-	warnedLimit := false
 	for {
 		cluster.RLock()
 		for {
@@ -636,14 +670,10 @@ func (cluster *mongoCluster) AcquireSocket(mode Mode, slaveOk bool, syncTimeout 
 			continue
 		}
 
-		s, abended, err := server.AcquireSocket(poolLimit, socketTimeout)
-		if err == errPoolLimit {
-			if !warnedLimit {
-				warnedLimit = true
-				log("WARNING: Per-server connection limit reached.")
-			}
-			time.Sleep(100 * time.Millisecond)
-			continue
+		s, abended, err := server.AcquireSocketWithBlocking(poolLimit, socketTimeout, poolTimeout)
+		if err == errPoolTimeout {
+			// No need to remove servers from the topology if acquiring a socket fails for this reason.
+			return nil, err
 		}
 		if err != nil {
 			cluster.removeServer(server)
@@ -660,6 +690,7 @@ func (cluster *mongoCluster) AcquireSocket(mode Mode, slaveOk bool, syncTimeout 
 				time.Sleep(100 * time.Millisecond)
 				continue
 			} else {
+				// We've managed to successfully reconnect to the master, we are no longer abnormaly ended
 				server.Lock()
 				server.abended = false
 				server.Unlock()

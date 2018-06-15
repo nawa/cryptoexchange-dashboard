@@ -1,6 +1,7 @@
 package sessions
 
 import (
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -26,13 +27,10 @@ func GetCookie(ctx context.Context, name string) string {
 	}
 
 	return c.Value
-
-	// return ctx.GetCookie(name)
 }
 
 // AddCookie adds a cookie
 func AddCookie(ctx context.Context, cookie *http.Cookie, reclaim bool) {
-	// http.SetCookie(ctx.ResponseWriter(), cookie)
 	if reclaim {
 		ctx.Request().AddCookie(cookie)
 	}
@@ -41,20 +39,22 @@ func AddCookie(ctx context.Context, cookie *http.Cookie, reclaim bool) {
 
 // RemoveCookie deletes a cookie by it's name/key
 // If "purge" is true then it removes the, temp, cookie from the request as well.
-func RemoveCookie(ctx context.Context, name string, purge bool) {
-	c, err := ctx.Request().Cookie(name)
+func RemoveCookie(ctx context.Context, config Config) {
+	cookie, err := ctx.Request().Cookie(config.Cookie)
 	if err != nil {
 		return
 	}
 
-	c.Expires = CookieExpireDelete
+	cookie.Expires = CookieExpireDelete
 	// MaxAge<0 means delete cookie now, equivalently 'Max-Age: 0'
-	c.MaxAge = -1
-	c.Value = ""
-	c.Path = "/"
-	AddCookie(ctx, c, purge)
+	cookie.MaxAge = -1
+	cookie.Value = ""
+	cookie.Path = "/"
+	cookie.Domain = formatCookieDomain(ctx, config.DisableSubdomainPersistence)
 
-	if purge {
+	AddCookie(ctx, cookie, config.AllowReclaim)
+
+	if config.AllowReclaim {
 		// delete request's cookie also, which is temporary available.
 		ctx.Request().Header.Set("Cookie", "")
 	}
@@ -63,7 +63,7 @@ func RemoveCookie(ctx context.Context, name string, purge bool) {
 // IsValidCookieDomain returns true if the receiver is a valid domain to set
 // valid means that is recognised as 'domain' by the browser, so it(the cookie) can be shared with subdomains also
 func IsValidCookieDomain(domain string) bool {
-	if domain == "0.0.0.0" || domain == "127.0.0.1" {
+	if net.IP([]byte(domain)).IsLoopback() {
 		// for these type of hosts, we can't allow subdomains persistence,
 		// the web browser doesn't understand the mysubdomain.0.0.0.0 and mysubdomain.127.0.0.1 mysubdomain.32.196.56.181. as scorrectly ubdomains because of the many dots
 		// so don't set a cookie domain here, let browser handle this
@@ -88,4 +88,33 @@ func IsValidCookieDomain(domain string) bool {
 	}
 
 	return true
+}
+
+func formatCookieDomain(ctx context.Context, disableSubdomainPersistence bool) string {
+	if disableSubdomainPersistence {
+		return ""
+	}
+
+	requestDomain := ctx.Host()
+	if portIdx := strings.IndexByte(requestDomain, ':'); portIdx > 0 {
+		requestDomain = requestDomain[0:portIdx]
+	}
+
+	if !IsValidCookieDomain(requestDomain) {
+		return ""
+	}
+
+	// RFC2109, we allow level 1 subdomains, but no further
+	// if we have localhost.com , we want the localhost.com.
+	// so if we have something like: mysubdomain.localhost.com we want the localhost here
+	// if we have mysubsubdomain.mysubdomain.localhost.com we want the .mysubdomain.localhost.com here
+	// slow things here, especially the 'replace' but this is a good and understable( I hope) way to get the be able to set cookies from subdomains & domain with 1-level limit
+	if dotIdx := strings.IndexByte(requestDomain, '.'); dotIdx > 0 {
+		// is mysubdomain.localhost.com || mysubsubdomain.mysubdomain.localhost.com
+		if strings.IndexByte(requestDomain[dotIdx+1:], '.') > 0 {
+			requestDomain = requestDomain[dotIdx+1:]
+		}
+	}
+	// finally set the .localhost.com (for(1-level) || .mysubdomain.localhost.com (for 2-level subdomain allow)
+	return "." + requestDomain // . to allow persistence
 }

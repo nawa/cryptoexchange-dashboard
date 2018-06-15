@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"time"
 
 	"github.com/kataras/iris"
@@ -10,16 +11,21 @@ import (
 )
 
 func main() {
-	db, _ := boltdb.New("./sessions/sessions.db", 0666, "users")
+	db, err := boltdb.New("./sessions.db", os.FileMode(0750))
+	if err != nil {
+		panic(err)
+	}
 
-	// close and unlock the database when control+C/cmd+C pressed
+	// close and unlobkc the database when control+C/cmd+C pressed
 	iris.RegisterOnInterrupt(func() {
 		db.Close()
 	})
 
+	defer db.Close() // close and unlock the database if application errored.
+
 	sess := sessions.New(sessions.Config{
 		Cookie:  "sessionscookieid",
-		Expires: 45 * time.Minute, // <=0 means unlimited life
+		Expires: 45 * time.Minute, // <=0 means unlimited life. Defaults to 0.
 	})
 
 	//
@@ -39,7 +45,7 @@ func main() {
 		s.Set("name", "iris")
 
 		//test if setted here
-		ctx.Writef("All ok session setted to: %s", s.GetString("name"))
+		ctx.Writef("All ok session value of the 'name' is: %s", s.GetString("name"))
 	})
 
 	app.Get("/set/{key}/{value}", func(ctx iris.Context) {
@@ -49,14 +55,14 @@ func main() {
 		s.Set(key, value)
 
 		// test if setted here
-		ctx.Writef("All ok session setted to: %s", s.GetString(key))
+		ctx.Writef("All ok session value of the '%s' is: %s", key, s.GetString(key))
 	})
 
 	app.Get("/get", func(ctx iris.Context) {
 		// get a specific key, as string, if no found returns just an empty string
 		name := sess.Start(ctx).GetString("name")
 
-		ctx.Writef("The name on the /set was: %s", name)
+		ctx.Writef("The 'name' on the /set was: %s", name)
 	})
 
 	app.Get("/get/{key}", func(ctx iris.Context) {
@@ -86,5 +92,5 @@ func main() {
 		sess.ShiftExpiration(ctx)
 	})
 
-	app.Run(iris.Addr(":8080"))
+	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
 }

@@ -1,4 +1,4 @@
-# Ιστορικό <a href="HISTORY.md"> <img width="20px" src="https://iris-go.com/images/flag-unitedkingdom.svg?v=10" /></a> <a href="HISTORY_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a>
+# Ιστορικό <a href="HISTORY.md"> <img width="20px" src="https://iris-go.com/images/flag-unitedkingdom.svg?v=10" /></a> <a href="HISTORY_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="HISTORY_ID.md"> <img width="20px" src="https://iris-go.com/images/flag-indonesia.svg?v=10" /></a>
 
 ### Ψάχνετε για δωρεάν υποστήριξη σε πραγματικό χρόνο;
 
@@ -16,6 +16,53 @@
 > Το Iris εκμεταλλεύεται τη λεγόμενη λειτουργία [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo). Παίρνετε πλήρως αναπαραγωγίσιμα builds, καθώς αυτή η μέθοδος προστατεύει από τις upstream μετονομασίες και διαγραφές.
 
 **Πώς να αναβαθμίσετε**: Ανοίξτε την γραμμή εντολών σας και εκτελέστε αυτήν την εντολή: `go get -u github.com/kataras/iris`  ή αφήστε το αυτόματο updater να το κάνει αυτό για σας.
+
+# Tu, 05 June 2018 | v10.6.6
+
+This history entry is not translated yet to the Greek language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-05-june-2018--v1066) instead.
+
+# Mo, 21 May 2018 | v10.6.5
+
+This history entry is not translated yet to the Greek language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#mo-21-may-2018--v1065) instead.
+
+# We, 09 May 2018 | v10.6.4
+
+- [διόρθωση του bug #995](https://github.com/kataras/iris/commit/62457279f41a1f157869a19ef35fb5198694fddb)
+- [διόρθωση του bug #996](https://github.com/kataras/iris/commit/a11bb5619ab6b007dce15da9984a78d88cd38956)
+
+# We, 02 May 2018 | v10.6.3
+
+This history entry is not translated yet to the Greek language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#we-02-may-2018--v1063) instead.
+
+# Tu, 01 May 2018 | v10.6.2
+
+This history entry is not translated yet to the Greek language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-01-may-2018--v1062) instead.
+
+# We, 25 April 2018 | v10.6.1
+
+This history entry is not translated yet to the Greek language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#we-25-april-2018--v1061) instead.
+
+# Su, 22 April 2018 | v10.6.0
+
+This history entry is not translated yet to the Greek language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#su-22-april-2018--v1060) instead.
+
+# Sa, 24 March 2018 | v10.5.0
+
+This history entry is not translated yet to the Greek language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#sa-24-march-2018--v1050) instead.
+
+# We, 14 March 2018 | v10.4.0
+
+This history entry is not translated yet to the Greek language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#we-14-march-2018--v1040) instead.
+
+# Sa, 10 March 2018 | v10.3.0
+
+This history entry is not translated yet to the Greek language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#sa-10-march-2018--v1030) instead.
+
+# Th, 15 February 2018 | v10.2.1
+
+Διόρθωση το οποίο αφορά 404 not found errors στα αρχεία που σερβίρονται από τα `StaticEmbedded` και `StaticWeb` των υποτομεών(subdomains), όπως αναφέρθηκε πριν λίγο από τον [@speedwheel](https://github.com/speedwheel) μέσω [της σελίδας μας στο facebook](https://facebook.com/iris.framework).
+
+This history entry is not yet translated to Greek. Please read [the english version instead](https://github.com/kataras/iris/blob/master/HISTORY.md#th-15-february-2018--v1021).
 
 # Th, 08 February 2018 | v10.2.0
 

@@ -1,4 +1,4 @@
-# 更新记录 <a href="HISTORY.md"> <img width="20px" src="https://iris-go.com/images/flag-unitedkingdom.svg?v=10" /></a> <a href="HISTORY_GR.md"> <img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a>
+# 更新记录 <a href="HISTORY.md"> <img width="20px" src="https://iris-go.com/images/flag-unitedkingdom.svg?v=10" /></a> <a href="HISTORY_ID.md"> <img width="20px" src="https://iris-go.com/images/flag-indonesia.svg?v=10" /></a> <a href="HISTORY_GR.md"> <img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a>
 
 ### 想得到免费即时的支持?
 
@@ -17,9 +17,143 @@
 
 **如何升级**: 打开命令行执行以下命令: `go get -u github.com/kataras/iris` 或者等待自动更新。
 
-# Th, 08 February 2018 | v10.2.0
+# Tu, 05 June 2018 | v10.6.6
 
-This history entry is not yet translated to Chinese. Please read [the english version instead](https://github.com/kataras/iris/blob/master/HISTORY.md#th-08-february-2018--v1020).
+This history entry is not translated yet to the Chinese language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-05-june-2018--v1066) instead.
+
+# Mo, 21 May 2018 | v10.6.5
+
+This history entry is not translated yet to the Chinese language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#mo-21-may-2018--v1065) instead.
+
+# We, 09 May 2018 | v10.6.4
+
+- [fix issue 995](https://github.com/kataras/iris/commit/62457279f41a1f157869a19ef35fb5198694fddb)
+- [fix issue 996](https://github.com/kataras/iris/commit/a11bb5619ab6b007dce15da9984a78d88cd38956)
+
+# We, 02 May 2018 | v10.6.3
+
+This history entry is not translated yet to the Chinese language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#we-02-may-2018--v1063) instead.
+
+# Tu, 01 May 2018 | v10.6.2
+
+This history entry is not translated yet to the Chinese language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-01-may-2018--v1062) instead.
+
+# 2018 4月25日 | v10.6.1 版本更新
+
+- 用最新版 BoltDB 重新实现 session (`sessiondb`) 存储：[/sessions/sessiondb/boltdb/database.go](sessions/sessiondb/boltdb/database.go), 相关示例 [/_examples/sessions/database/boltdb/main.go](_examples/sessions/database/boltdb/main.go).
+- 修正 一个小问题 on [Badger sessiondb example](_examples/sessions/database/badger/main.go). `sessions.Config { Expires }` 字段由 `2 *time.Second` 调整为 `45 *time.Minute` .
+- badger sessiondb 其他小改进.
+
+# 2018 4月22日 | v10.6.0 版本更新
+
+- 修正 重定向问题 由 @wozz 提交: https://github.com/kataras/iris/pull/972.
+- 修正 无法销毁子域名 session 问题 由 @Chengyumeng 提交: https://github.com/kataras/iris/pull/964.
+- 添加 `OnDestroy(sid string)` 当 session 销毁时注册监听器 相关细节: https://github.com/kataras/iris/commit/d17d7fecbe4937476d00af7fda1c138c1ac6f34d.
+- sessions 现在与注册数据库完全同步。 这涉及到很多内部改动，但 **这不影响你当前项目代码**. 我们只保留了 `badger` 和 `redis` 作为底部支持。 相关细节: https://github.com/kataras/iris/commit/f2c3a5f0cef62099fd4d77c5ccb14f654ddbfb5c 
+
+# 2018 3月 24日 | v10.5.0 版本更新
+
+### 新增
+
+新增 缓存中间件客户端，更快的静态文件服务器. 详情 [点击](https://github.com/kataras/iris/pull/935).
+
+### 破坏式更新
+
+改变 `Value<T>Default(<T>, error)` 为 `Value<T>Default(key, defaultValue) <T>`  如同 `ctx.PostValueIntDefault` 或 `ctx.Values().GetIntDefault` 或 `sessions/session#GetIntDefault` 或 `context#URLParamIntDefault`.
+由 @jefurry 提出 https://github.com/kataras/iris/issues/937.
+
+#### 如何升级现有代码
+
+只需要移除第二个返回值即可.
+
+示例:  [_examples/mvc/basic/main.go line 100](_examples/mvc/basic/main.go#L100)  `count,_ := c.Session.GetIntDefault("count", 1)` **变更为:** `count := c.Session.GetIntDefault("count", 1)`.
+
+> 请记住，如果您无法升级，那么就不要这样做，我们在此版本中没有任何安全修复程序，但在某些时候建议您最好进行升级，我们总是会添加您喜欢的新功能！
+
+
+# 2018 3月14日 | v10.4.0 版本更新
+
+- 修正 `APIBuilder, Party#StaticWeb` 和 `APIBuilder, Party#StaticEmbedded` 子分组内的前缀错误
+- 保留 `iris, core/router#StaticEmbeddedHandler` 并移除 `core/router/APIBuilder#StaticEmbeddedHandler`,  (`Handler` 后缀) 这是全局性的，与 `Party` `APIBuilder` 无关。
+- 修正 路径 `{}` 中的路径清理 (我们已经在 [解释器](core/router/macro/interpreter) 级别转义了这些字符， 但是一些符号仍然被更高级别的API构建器删除) , 例如 `\\` 字符串的宏函数正则表达式内容 [927](https://github.com/kataras/iris/issues/927) by [commit e85b113476eeefffbc7823297cc63cd152ebddfd](https://github.com/kataras/iris/commit/e85b113476eeefffbc7823297cc63cd152ebddfd)
+- 同步 `golang.org/x/sys/unix`
+
+## 重要变更
+
+我们使用新工具将静态文件的速度提高了8倍, <https://github.com/kataras/bindata> 这是 go-bindata 的一个分支，对我们来说，一些不必要的东西被移除了，并且包含一些提高性能的补充。
+
+## Reqs/sec 使用 [shuLhan/go-bindata](https://github.com/shuLhan/go-bindata) 和 备选方案对比
+
+![go-bindata](https://github.com/kataras/bindata/raw/master/go-bindata-benchmark.png)
+
+## Reqs/sec 使用 [kataras/bindata](https://github.com/kataras/bindata)
+
+![bindata](https://github.com/kataras/bindata/raw/master/bindata-benchmark.png)
+
+**新增** 方法 `Party#StaticEmbeddedGzip` 与 `Party#StaticEmbedded` 参数相同. 不同处在于 **新增** `StaticEmbeddedGzip` 从 `bindata` 接收 `GzipAsset` 和 `GzipAssetNames` (go get -u github.com/kataras/bindata/cmd/bindata).
+
+你可以在同个文件夹里同时使用 `bindata` 和 `go-bindata` 工具, 第一个用于嵌入静态文件 (javascript, css, ...) 第二个用于静态编译模板!
+
+完整示例: [_examples/file-server/embedding-gziped-files-into-app/main.go](_examples/file-server/embedding-gziped-files-into-app/main.go).
+
+
+# 2018 3月10号 | v10.3.0 版本更新
+
+- 只有一项 API 更改 [Application/Context/Router#RouteExists](https://godoc.org/github.com/kataras/iris/core/router#Router.RouteExists), 将 `Context` 作为第一参数，而不是最后一个。
+
+- 修正 cors 中间件 https://github.com/iris-contrib/middleware/commit/048e2be034ed172c6754448b8a54a9c55debad46, 相关问题: https://github.com/kataras/iris/issues/922 (目前仍在等待验证).
+
+- 添加 `Context#NextOr` 和 `Context#NextOrNotFound` 方法
+
+```go
+// NextOr 检查程序链上是否有下一个处理程序，如果是，则执行它
+// 否则根据给定的处理程序设置分配给 Context 程序链，并且执行第一个控制器。
+//
+// 如果下一个处理器存在并执行，则返回true，否则返回false
+//
+// 请注意，如果没有找到下一个处理程序并且处理程序缺失，
+// 会发送 (404) 状态码到客户端，并停止执行。
+NextOr(handlers ...Handler) bool
+// NextOrNotFound 检查程序链上是否存在下一个处理程序，如果有则执行
+// 其他情况会发送 404 状态码，并停止执行。
+//
+// 如果下一个控制器存在并执行，返回 true , 其他情况 false.
+NextOrNotFound() bool
+```
+
+- 新增方法 `Party#AllowMethods` 如果在 `Handle, Get, Post...` 之前调用，则会将路由克隆到该方法.
+
+- 修复 POST 请求尾部斜杠重定向问题: https://github.com/kataras/iris/issues/921 https://github.com/kataras/iris/commit/dc589d9135295b4d080a9a91e942aacbfe5d56c5
+
+- 新增示例 通过 `iris#UnmarshalerFunc` 自定义解码， 新增 `context#ReadXML` 使用示例, [相关示例](https://github.com/kataras/iris/tree/master/_examples#how-to-read-from-contextrequest-httprequest)via https://github.com/kataras/iris/commit/78cd8e5f677fe3ff2c863c5bea7d1c161bf4c31e.
+
+- 新增自定义路由宏功能示例, 相关讨论 https://github.com/kataras/iris/issues/918, [示例代码](https://github.com/kataras/iris/blob/master/_examples/routing/dynamic-path/main.go#L144-L158), https://github.com/kataras/iris/commit/a7690c71927cbf3aa876592fab94f04cada91b72
+
+- 为 `Pongo` 新增 `AsValue()` 和 `AsSaveValue()` @neenar https://github.com/kataras/iris/pull/913
+
+- 删除 `context#UnmarshalBody` 上不必要的反射 https://github.com/kataras/iris/commit/4b9e41458b62035ea4933789c0a132c3ef2a90cc
+
+# 2018 2月15号 | v10.2.1 版本更新
+
+修正 子域名 (subdomain) 的 `StaticEmbedded` 和 `StaticWeb` 不存在错误, 由 [@speedwheel](https://github.com/speedwheel) 通过 [facebook page's chat](https://facebook.com/iris.framework) 反馈。
+
+# 2018 2月8号 | v10.2.0 版本更新
+
+新的小版本， 因为它包含一个 **破坏性变动** 和一个新功能 `Party#Reset`
+
+### Party#Done 特性变动 和 新增 Party#DoneGlobal 介绍
+
+正如 @likakuli 指出的那样 https://github.com/kataras/iris/issues/901, 以前 `Done` 注册的处理器，在全局范围内会替代子处理器，因为在引入 `UseGlobal` 这概念之前，缺少稳定性. 现在是时候了, 新的 `Done` 应该在相关的路由之前调用， **新增** `DoneGlobal` 之前的`Done` 使用相同; 顺序无关紧要，他只是结束处理附加到当前的注册程序, 全局性的 (所有子域名，分组).
+
+[routing/writing-a-middleware](_examples/routing/writing-a-middleware) 路由中间件示例更新, 列举了使用方式变化, 如果之前使用过 Iris ,并熟悉内置函数方法名称，请区分 `DoneGlobal` 和 `Done` 的不同.
+
+### Party#Reset
+
+新增 `Party#Reset()` 函数，以便重置上级分组通过 `Use` 和 `Done` 注册的处理方法, 没有什么特别之处，它只是清除当前分组实例的 `middleware` 和 `doneHandlers`，详情参见 `core/router#APIBuilder`.
+
+### 更新方法
+
+只需要将现有的 `.Done` 替换为 `.DoneGlobal` 就可以了。
 
 # 2018 2月6号 | v10.1.0 版本更新
 

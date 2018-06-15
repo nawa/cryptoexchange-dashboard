@@ -92,6 +92,7 @@ type Session struct {
 	syncTimeout      time.Duration
 	sockTimeout      time.Duration
 	poolLimit        int
+	poolTimeout      time.Duration
 	consistency      Mode
 	creds            []Credential
 	dialCred         *Credential
@@ -169,7 +170,9 @@ type Iter struct {
 	timeout        time.Duration
 	limit          int32
 	timedout       bool
-	findCmd        bool
+	isFindCmd      bool
+	isChangeStream bool
+	maxTimeMS      int64
 }
 
 var (
@@ -269,6 +272,16 @@ const (
 //        Defines the per-server socket pool limit. Defaults to 4096.
 //        See Session.SetPoolLimit for details.
 //
+//     minPoolSize=<limit>
+//
+//        Defines the per-server socket pool minium size. Defaults to 0.
+//
+//     maxIdleTimeMS=<millisecond>
+//
+//        The maximum number of milliseconds that a connection can remain idle in the pool
+//        before being removed and closed. If maxIdleTimeMS is 0, connections will never be
+//        closed due to inactivity.
+//
 //     appName=<appName>
 //
 //        The identifier of this client application. This parameter is used to
@@ -320,6 +333,8 @@ func ParseURL(url string) (*DialInfo, error) {
 	appName := ""
 	readPreferenceMode := Primary
 	var readPreferenceTagSets []bson.D
+	minPoolSize := 0
+	maxIdleTimeMS := 0
 	for _, opt := range uinfo.options {
 		switch opt.key {
 		case "authSource":
@@ -366,6 +381,22 @@ func ParseURL(url string) (*DialInfo, error) {
 				doc = append(doc, bson.DocElem{Name: strings.TrimSpace(kvp[0]), Value: strings.TrimSpace(kvp[1])})
 			}
 			readPreferenceTagSets = append(readPreferenceTagSets, doc)
+		case "minPoolSize":
+			minPoolSize, err = strconv.Atoi(opt.value)
+			if err != nil {
+				return nil, errors.New("bad value for minPoolSize: " + opt.value)
+			}
+			if minPoolSize < 0 {
+				return nil, errors.New("bad value (negtive) for minPoolSize: " + opt.value)
+			}
+		case "maxIdleTimeMS":
+			maxIdleTimeMS, err = strconv.Atoi(opt.value)
+			if err != nil {
+				return nil, errors.New("bad value for maxIdleTimeMS: " + opt.value)
+			}
+			if maxIdleTimeMS < 0 {
+				return nil, errors.New("bad value (negtive) for maxIdleTimeMS: " + opt.value)
+			}
 		case "connect":
 			if opt.value == "direct" {
 				direct = true
@@ -400,6 +431,8 @@ func ParseURL(url string) (*DialInfo, error) {
 			TagSets: readPreferenceTagSets,
 		},
 		ReplicaSetName: setName,
+		MinPoolSize:    minPoolSize,
+		MaxIdleTimeMS:  maxIdleTimeMS,
 	}
 	return &info, nil
 }
@@ -454,6 +487,11 @@ type DialInfo struct {
 	// See Session.SetPoolLimit for details.
 	PoolLimit int
 
+	// PoolTimeout defines max time to wait for a connection to become available
+	// if the pool limit is reaqched. Defaults to zero, which means forever.
+	// See Session.SetPoolTimeout for details
+	PoolTimeout time.Duration
+
 	// The identifier of the client application which ran the operation.
 	AppName string
 
@@ -472,6 +510,14 @@ type DialInfo struct {
 	// specified seed servers, or to obtain information for the whole
 	// cluster and establish connections with further servers too.
 	Direct bool
+
+	// MinPoolSize defines The minimum number of connections in the connection pool.
+	// Defaults to 0.
+	MinPoolSize int
+
+	//The maximum number of milliseconds that a connection can remain idle in the pool
+	// before being removed and closed.
+	MaxIdleTimeMS int
 
 	// DialServer optionally specifies the dial function for establishing
 	// connections with the MongoDB servers.
@@ -552,6 +598,14 @@ func DialWithInfo(info *DialInfo) (*Session, error) {
 	if info.PoolLimit > 0 {
 		session.poolLimit = info.PoolLimit
 	}
+
+	cluster.minPoolSize = info.MinPoolSize
+	cluster.maxIdleTimeMS = info.MaxIdleTimeMS
+
+	if info.PoolTimeout > 0 {
+		session.poolTimeout = info.PoolTimeout
+	}
+
 	cluster.Release()
 
 	// People get confused when we return a session that is not actually
@@ -667,6 +721,7 @@ func copySession(session *Session, keepCreds bool) (s *Session) {
 		syncTimeout:      session.syncTimeout,
 		sockTimeout:      session.sockTimeout,
 		poolLimit:        session.poolLimit,
+		poolTimeout:      session.poolTimeout,
 		consistency:      session.consistency,
 		creds:            creds,
 		dialCred:         session.dialCred,
@@ -801,6 +856,15 @@ func (db *Database) Run(cmd interface{}, result interface{}) error {
 	defer socket.Release()
 
 	// This is an optimized form of db.C("$cmd").Find(cmd).One(result).
+	return db.run(socket, cmd, result)
+}
+
+// runOnSocket does the same as Run, but guarantees that your command will be run
+// on the provided socket instance; if it's unhealthy, you will receive the error
+// from it.
+func (db *Database) runOnSocket(socket *mongoSocket, cmd interface{}, result interface{}) error {
+	socket.Acquire()
+	defer socket.Release()
 	return db.run(socket, cmd, result)
 }
 
@@ -1115,6 +1179,11 @@ func isNotFound(err error) bool {
 func isAuthError(err error) bool {
 	e, ok := err.(*QueryError)
 	return ok && e.Code == 13
+}
+
+func isNotMasterError(err error) bool {
+	e, ok := err.(*QueryError)
+	return ok && strings.Contains(e.Message, "not master")
 }
 
 func (db *Database) runUserCmd(cmdName string, user *User) error {
@@ -1993,6 +2062,16 @@ func (s *Session) SetPoolLimit(limit int) {
 	s.m.Unlock()
 }
 
+// SetPoolTimeout sets the maxinum time connection attempts will wait to reuse
+// an existing connection from the pool if the PoolLimit has been reached. If
+// the value is exceeded, the attempt to use a session will fail with an error.
+// The default value is zero, which means to wait forever with no timeout.
+func (s *Session) SetPoolTimeout(timeout time.Duration) {
+	s.m.Lock()
+	s.poolTimeout = timeout
+	s.m.Unlock()
+}
+
 // SetBypassValidation sets whether the server should bypass the registered
 // validation expressions executed when documents are inserted or modified,
 // in the interest of preserving invariants in the collection being modified.
@@ -2263,6 +2342,13 @@ func (s *Session) Run(cmd interface{}, result interface{}) error {
 	return s.DB("admin").Run(cmd, result)
 }
 
+// runOnSocket does the same as Run, but guarantees that your command will be run
+// on the provided socket instance; if it's unhealthy, you will receive the error
+// from it.
+func (s *Session) runOnSocket(socket *mongoSocket, cmd interface{}, result interface{}) error {
+	return s.DB("admin").runOnSocket(socket, cmd, result)
+}
+
 // SelectServers restricts communication to servers configured with the
 // given tags. For example, the following statement restricts servers
 // used for reading operations to those with both tag "disk" set to
@@ -2423,6 +2509,8 @@ type Pipe struct {
 	pipeline   interface{}
 	allowDisk  bool
 	batchSize  int
+	maxTimeMS  int64
+	collation  *Collation
 }
 
 type pipeCmd struct {
@@ -2431,6 +2519,8 @@ type pipeCmd struct {
 	Cursor    *pipeCmdCursor `bson:",omitempty"`
 	Explain   bool           `bson:",omitempty"`
 	AllowDisk bool           `bson:"allowDiskUse,omitempty"`
+	MaxTimeMS int64          `bson:"maxTimeMS,omitempty"`
+	Collation *Collation     `bson:"collation,omitempty"`
 }
 
 type pipeCmdCursor struct {
@@ -2451,6 +2541,7 @@ type pipeCmdCursor struct {
 //     http://docs.mongodb.org/manual/applications/aggregation
 //     http://docs.mongodb.org/manual/tutorial/aggregation-examples
 //
+
 func (c *Collection) Pipe(pipeline interface{}) *Pipe {
 	session := c.Database.Session
 	session.m.RLock()
@@ -2484,6 +2575,10 @@ func (p *Pipe) Iter() *Iter {
 		Pipeline:  p.pipeline,
 		AllowDisk: p.allowDisk,
 		Cursor:    &pipeCmdCursor{p.batchSize},
+		Collation: p.collation,
+	}
+	if p.maxTimeMS > 0 {
+		cmd.MaxTimeMS = p.maxTimeMS
 	}
 	err := c.Database.Run(cmd, &result)
 	if e, ok := err.(*QueryError); ok && e.Message == `unrecognized field "cursor` {
@@ -2495,7 +2590,11 @@ func (p *Pipe) Iter() *Iter {
 	if firstBatch == nil {
 		firstBatch = result.Cursor.FirstBatch
 	}
-	return c.NewIter(p.session, firstBatch, result.Cursor.Id, err)
+	it := c.NewIter(p.session, firstBatch, result.Cursor.Id, err)
+	if p.maxTimeMS > 0 {
+		it.maxTimeMS = p.maxTimeMS
+	}
+	return it
 }
 
 // NewIter returns a newly created iterator with the provided parameters. Using
@@ -2557,7 +2656,7 @@ func (c *Collection) NewIter(session *Session, firstBatch []bson.Raw, cursorId i
 	}
 
 	if socket.ServerInfo().MaxWireVersion >= 4 && c.FullName != "admin.$cmd" {
-		iter.findCmd = true
+		iter.isFindCmd = true
 	}
 
 	iter.gotReply.L = &iter.m
@@ -2656,6 +2755,30 @@ func (p *Pipe) AllowDiskUse() *Pipe {
 // The default batch size is defined by the database server.
 func (p *Pipe) Batch(n int) *Pipe {
 	p.batchSize = n
+	return p
+}
+
+// SetMaxTime sets the maximum amount of time to allow the query to run.
+//
+func (p *Pipe) SetMaxTime(d time.Duration) *Pipe {
+	p.maxTimeMS = int64(d / time.Millisecond)
+	return p
+}
+
+
+// Collation allows to specify language-specific rules for string comparison,
+// such as rules for lettercase and accent marks.
+// When specifying collation, the locale field is mandatory; all other collation
+// fields are optional
+//
+// Relevant documentation:
+//
+//      https://docs.mongodb.com/manual/reference/collation/
+//
+func (p *Pipe) Collation(collation *Collation) *Pipe {
+	if collation != nil {
+		p.collation = collation
+	}
 	return p
 }
 
@@ -3801,7 +3924,7 @@ func (q *Query) Iter() *Iter {
 	op.replyFunc = iter.op.replyFunc
 
 	if prepareFindOp(socket, &op, limit) {
-		iter.findCmd = true
+		iter.isFindCmd = true
 	}
 
 	iter.server = socket.Server()
@@ -4015,7 +4138,8 @@ func (iter *Iter) Timeout() bool {
 // Next returns true if a document was successfully unmarshalled onto result,
 // and false at the end of the result set or if an error happened.
 // When Next returns false, the Err method should be called to verify if
-// there was an error during iteration.
+// there was an error during iteration, and the Timeout method to verify if the
+// false return value was caused by a timeout (no available results).
 //
 // For example:
 //
@@ -4031,7 +4155,16 @@ func (iter *Iter) Next(result interface{}) bool {
 	iter.m.Lock()
 	iter.timedout = false
 	timeout := time.Time{}
+	// for a ChangeStream iterator we have to call getMore before the loop otherwise
+	// we'll always return false
+	if iter.isChangeStream {
+		iter.getMore()
+	}
+	// check should we expect more data.
 	for iter.err == nil && iter.docData.Len() == 0 && (iter.docsToReceive > 0 || iter.op.cursorId != 0) {
+		// we should expect more data.
+
+		// If we have yet to receive data, increment the timer until we timeout.
 		if iter.docsToReceive == 0 {
 			if iter.timeout >= 0 {
 				if timeout.IsZero() {
@@ -4043,6 +4176,13 @@ func (iter *Iter) Next(result interface{}) bool {
 					return false
 				}
 			}
+			// for a ChangeStream one loop i enought to declare the timeout
+			if iter.isChangeStream {
+				iter.timedout = true
+				iter.m.Unlock()
+				return false
+			}
+			// run a getmore to fetch more data.
 			iter.getMore()
 			if iter.err != nil {
 				break
@@ -4050,7 +4190,7 @@ func (iter *Iter) Next(result interface{}) bool {
 		}
 		iter.gotReply.Wait()
 	}
-
+	// We have data from the getMore.
 	// Exhaust available data before reporting any errors.
 	if docData, ok := iter.docData.Pop().([]byte); ok {
 		close := false
@@ -4066,6 +4206,7 @@ func (iter *Iter) Next(result interface{}) bool {
 			}
 		}
 		if iter.op.cursorId != 0 && iter.err == nil {
+			// we still have a live cursor and currently expect data.
 			iter.docsBeforeMore--
 			if iter.docsBeforeMore == -1 {
 				iter.getMore()
@@ -4255,7 +4396,7 @@ func (iter *Iter) getMore() {
 		}
 	}
 	var op interface{}
-	if iter.findCmd {
+	if iter.isFindCmd || iter.isChangeStream {
 		op = iter.getMoreCmd()
 	} else {
 		op = &iter.op
@@ -4277,6 +4418,9 @@ func (iter *Iter) getMoreCmd() *queryOp {
 		CursorId:   iter.op.cursorId,
 		Collection: iter.op.collection[nameDot+1:],
 		BatchSize:  iter.op.limit,
+	}
+	if iter.maxTimeMS > 0 {
+		getMore.MaxTimeMS = iter.maxTimeMS
 	}
 
 	var op queryOp
@@ -4806,7 +4950,9 @@ func (s *Session) acquireSocket(slaveOk bool) (*mongoSocket, error) {
 	}
 
 	// Still not good.  We need a new socket.
-	sock, err := s.cluster().AcquireSocket(s.consistency, slaveOk && s.slaveOk, s.syncTimeout, s.sockTimeout, s.queryConfig.op.serverTags, s.poolLimit)
+	sock, err := s.cluster().AcquireSocketWithPoolTimeout(
+		s.consistency, slaveOk && s.slaveOk, s.syncTimeout, s.sockTimeout, s.queryConfig.op.serverTags, s.poolLimit, s.poolTimeout,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -4882,7 +5028,7 @@ func (iter *Iter) replyFunc() replyFunc {
 			} else {
 				iter.err = ErrNotFound
 			}
-		} else if iter.findCmd {
+		} else if iter.isFindCmd {
 			debugf("Iter %p received reply document %d/%d (cursor=%d)", iter, docNum+1, int(op.replyDocs), op.cursorId)
 			var findReply struct {
 				Ok     bool
@@ -4894,7 +5040,7 @@ func (iter *Iter) replyFunc() replyFunc {
 				iter.err = err
 			} else if !findReply.Ok && findReply.Errmsg != "" {
 				iter.err = &QueryError{Code: findReply.Code, Message: findReply.Errmsg}
-			} else if len(findReply.Cursor.FirstBatch) == 0 && len(findReply.Cursor.NextBatch) == 0 {
+			} else if !iter.isChangeStream && len(findReply.Cursor.FirstBatch) == 0 && len(findReply.Cursor.NextBatch) == 0 {
 				iter.err = ErrNotFound
 			} else {
 				batch := findReply.Cursor.FirstBatch
@@ -5262,7 +5408,7 @@ func getRFC2253NameString(RDNElements *pkix.RDNSequence) string {
 	var replacer = strings.NewReplacer(",", "\\,", "=", "\\=", "+", "\\+", "<", "\\<", ">", "\\>", ";", "\\;")
 	//The elements in the sequence needs to be reversed when converting them
 	for i := len(*RDNElements) - 1; i >= 0; i-- {
-		var nameAndValueList = make([]string,len((*RDNElements)[i]))
+		var nameAndValueList = make([]string, len((*RDNElements)[i]))
 		for j, attribute := range (*RDNElements)[i] {
 			var shortAttributeName = rdnOIDToShortName(attribute.Type)
 			if len(shortAttributeName) <= 0 {

@@ -17,6 +17,16 @@ type (
 	// Developers send responses to the client's request through a Context.
 	// Developers get request information from the client's request by a Context.
 	Context = context.Context
+	// UnmarshalerFunc a shortcut, an alias for the `context#UnmarshalerFunc` type
+	// which implements the `context#Unmarshaler` interface for reading request's body
+	// via custom decoders, most of them already implement the `context#UnmarshalerFunc`
+	// like the json.Unmarshal, xml.Unmarshal, yaml.Unmarshal and every library which
+	// follows the best practises and is aligned with the Go standards.
+	//
+	// See 'context#UnmarshalBody` for more.
+	//
+	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-via-unmarshaler/main.go
+	UnmarshalerFunc = context.UnmarshalerFunc
 	// A Handler responds to an HTTP request.
 	// It writes reply headers and data to the Context.ResponseWriter() and then return.
 	// Returning signals that the request is finished;
@@ -47,4 +57,28 @@ type (
 	//
 	// A shortcut for the `core/router#Party`, useful when `PartyFunc` is being used.
 	Party = router.Party
+
+	// ExecutionRules gives control to the execution of the route handlers outside of the handlers themselves.
+	// Usage:
+	// Party#SetExecutionRules(ExecutionRules {
+	//   Done: ExecutionOptions{Force: true},
+	// })
+	//
+	// See `core/router/Party#SetExecutionRules` for more.
+	// Example: https://github.com/kataras/iris/tree/master/_examples/mvc/middleware/without-ctx-next
+	ExecutionRules = router.ExecutionRules
+	// ExecutionOptions is a set of default behaviors that can be changed in order to customize the execution flow of the routes' handlers with ease.
+	//
+	// See `ExecutionRules` and `core/router/Party#SetExecutionRules` for more.
+	ExecutionOptions = router.ExecutionOptions
+
+	// CookieOption is the type of function that is accepted on
+	// context's methods like `SetCookieKV`, `RemoveCookie` and `SetCookie`
+	// as their (last) variadic input argument to amend the end cookie's form.
+	//
+	// Any custom or built'n `CookieOption` is valid,
+	// see `CookiePath`, `CookieCleanPath`, `CookieExpires` and `CookieHTTPOnly` for more.
+	//
+	// An alias for the `context/Context#CookieOption`.
+	CookieOption = context.CookieOption
 )

@@ -147,6 +147,9 @@ func New(cfg Config) *Server {
 func (s *Server) Handler() context.Handler {
 	return func(ctx context.Context) {
 		c := s.Upgrade(ctx)
+		if c.Err() != nil {
+			return
+		}
 		// NOTE TO ME: fire these first BEFORE startReader and startPinger
 		// in order to set the events and any messages to send
 		// the startPinger will send the OK to the client and only
@@ -372,18 +375,20 @@ func (s *Server) GetConnectionsByRoom(roomName string) []Connection {
 // You SHOULD use connection.EmitMessage/Emit/To().Emit/EmitMessage instead.
 // let's keep it unexported for the best.
 func (s *Server) emitMessage(from, to string, data []byte) {
-	if to != All && to != Broadcast && s.rooms[to] != nil {
-		// it suppose to send the message to a specific room/or a user inside its own room
-		for _, connectionIDInsideRoom := range s.rooms[to] {
-			if c := s.connections.get(connectionIDInsideRoom); c != nil {
-				c.writeDefault(data) //send the message to the client(s)
-			} else {
-				// the connection is not connected but it's inside the room, we remove it on disconnect but for ANY CASE:
-				cid := connectionIDInsideRoom
-				if c != nil {
-					cid = c.id
+	if to != All && to != Broadcast {
+		if s.rooms[to] != nil {
+			// it suppose to send the message to a specific room/or a user inside its own room
+			for _, connectionIDInsideRoom := range s.rooms[to] {
+				if c := s.connections.get(connectionIDInsideRoom); c != nil {
+					c.writeDefault(data) //send the message to the client(s)
+				} else {
+					// the connection is not connected but it's inside the room, we remove it on disconnect but for ANY CASE:
+					cid := connectionIDInsideRoom
+					if c != nil {
+						cid = c.id
+					}
+					s.Leave(cid, to)
 				}
-				s.Leave(cid, to)
 			}
 		}
 	} else {

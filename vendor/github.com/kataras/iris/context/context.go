@@ -15,7 +15,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -49,20 +48,24 @@ type (
 	//
 	// Note: This is totally optionally, the default decoders
 	// for ReadJSON is the encoding/json and for ReadXML is the encoding/xml.
+	//
+	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-per-type/main.go
 	BodyDecoder interface {
 		Decode(data []byte) error
 	}
 
-	// Unmarshaler is the interface implemented by types that can unmarshal any raw data
-	// TIP INFO: Any v object which implements the BodyDecoder can be override the unmarshaler.
+	// Unmarshaler is the interface implemented by types that can unmarshal any raw data.
+	// TIP INFO: Any pointer to a value which implements the BodyDecoder can be override the unmarshaler.
 	Unmarshaler interface {
-		Unmarshal(data []byte, v interface{}) error
+		Unmarshal(data []byte, outPtr interface{}) error
 	}
 
 	// UnmarshalerFunc a shortcut for the Unmarshaler interface
 	//
 	// See 'Unmarshaler' and 'BodyDecoder' for more.
-	UnmarshalerFunc func(data []byte, v interface{}) error
+	//
+	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-via-unmarshaler/main.go
+	UnmarshalerFunc func(data []byte, outPtr interface{}) error
 )
 
 // Unmarshal parses the X-encoded data and stores the result in the value pointed to by v.
@@ -176,7 +179,7 @@ func (r RequestParams) GetIntUnslashed(key string) (int, error) {
 
 	}
 
-	return -1, memstore.ErrIntParse.Format(v)
+	return -1, fmt.Errorf("unable to find int for '%s'", key)
 }
 
 // Len returns the full length of the parameters.
@@ -310,7 +313,21 @@ type Context interface {
 	//
 	// Note: Custom context should override this method in order to be able to pass its own context.Context implementation.
 	Next()
-	// NextHandler returns(but it is NOT executes) the next handler from the handlers chain.
+	// NextOr checks if chain has a next handler, if so then it executes it
+	// otherwise it sets a new chain assigned to this Context based on the given handler(s)
+	// and executes its first handler.
+	//
+	// Returns true if next handler exists and executed, otherwise false.
+	//
+	// Note that if no next handler found and handlers are missing then
+	// it sends a Status Not Found (404) to the client and it stops the execution.
+	NextOr(handlers ...Handler) bool
+	// NextOrNotFound checks if chain has a next handler, if so then it executes it
+	// otherwise it sends a Status Not Found (404) to the client and stops the execution.
+	//
+	// Returns true if next handler exists and executed, otherwise false.
+	NextOrNotFound() bool
+	// NextHandler returns (it doesn't execute) the next handler from the handlers chain.
 	//
 	// Use .Skip() to skip this handler if needed to execute the next of this returning handler.
 	NextHandler() Handler
@@ -415,6 +432,10 @@ type Context interface {
 	// which may, setted before with the 'ContentType'.
 	GetContentType() string
 
+	// GetContentLength returns the request's header value of "Content-Length".
+	// Returns 0 if header was unable to be found or its value was not a valid number.
+	GetContentLength() int64
+
 	// StatusCode sets the status code header to the response.
 	// Look .GetStatusCode too.
 	StatusCode(statusCode int)
@@ -439,39 +460,35 @@ type Context interface {
 
 	// URLParam returns true if the url parameter exists, otherwise false.
 	URLParamExists(name string) bool
-	// URLParamDefault returns the get parameter from a request, if not found then "def" is returned.
+	// URLParamDefault returns the get parameter from a request,
+	// if not found then "def" is returned.
 	URLParamDefault(name string, def string) string
-	// URLParam returns the get parameter from a request , if any.
+	// URLParam returns the get parameter from a request, if any.
 	URLParam(name string) string
-	// URLParamTrim returns the url query parameter with trailing white spaces removed from a request,
-	// returns an error if parse failed.
+	// URLParamTrim returns the url query parameter with trailing white spaces removed from a request.
 	URLParamTrim(name string) string
-	// URLParamTrim returns the escaped url query parameter from a request,
-	// returns an error if parse failed.
+	// URLParamTrim returns the escaped url query parameter from a request.
 	URLParamEscape(name string) string
-	// URLParamIntDefault returns the url query parameter as int value from a request,
-	// if not found then "def" is returned.
-	// Returns an error if parse failed.
-	URLParamIntDefault(name string, def int) (int, error)
 	// URLParamInt returns the url query parameter as int value from a request,
-	// returns an error if parse failed.
+	// returns -1 and an error if parse failed.
 	URLParamInt(name string) (int, error)
-	// URLParamInt64Default returns the url query parameter as int64 value from a request,
-	// if not found then "def" is returned.
-	// Returns an error if parse failed.
-	URLParamInt64Default(name string, def int64) (int64, error)
+	// URLParamIntDefault returns the url query parameter as int value from a request,
+	// if not found or parse failed then "def" is returned.
+	URLParamIntDefault(name string, def int) int
 	// URLParamInt64 returns the url query parameter as int64 value from a request,
-	// returns an error if parse failed.
+	// returns -1 and an error if parse failed.
 	URLParamInt64(name string) (int64, error)
-	// URLParamFloat64Default returns the url query parameter as float64 value from a request,
-	// if not found then "def" is returned.
-	// Returns an error if parse failed.
-	URLParamFloat64Default(name string, def float64) (float64, error)
+	// URLParamInt64Default returns the url query parameter as int64 value from a request,
+	// if not found or parse failed then "def" is returned.
+	URLParamInt64Default(name string, def int64) int64
 	// URLParamFloat64 returns the url query parameter as float64 value from a request,
-	// returns an error if parse failed.
+	// returns -1 and an error if parse failed.
 	URLParamFloat64(name string) (float64, error)
+	// URLParamFloat64Default returns the url query parameter as float64 value from a request,
+	// if not found or parse failed then "def" is returned.
+	URLParamFloat64Default(name string, def float64) float64
 	// URLParamBool returns the url query parameter as boolean value from a request,
-	// returns an error if parse failed.
+	// returns an error if parse failed or not found.
 	URLParamBool(name string) (bool, error)
 	// URLParams returns a map of GET query parameters separated by comma if more than one
 	// it returns an empty map if nothing found.
@@ -505,36 +522,36 @@ type Context interface {
 	// PostValueTrim returns the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name",  without trailing spaces.
 	PostValueTrim(name string) string
-	// PostValueIntDefault returns the parsed form data from POST, PATCH,
-	// or PUT body parameters based on a "name", as int.
-	//
-	// If not found returns the "def".
-	PostValueIntDefault(name string, def int) (int, error)
 	// PostValueInt returns the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name", as int.
 	//
-	// If not found returns 0.
+	// If not found returns -1 and a non-nil error.
 	PostValueInt(name string) (int, error)
-	// PostValueInt64Default returns the parsed form data from POST, PATCH,
-	// or PUT body parameters based on a "name", as int64.
+	// PostValueIntDefault returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as int.
 	//
-	// If not found returns the "def".
-	PostValueInt64Default(name string, def int64) (int64, error)
+	// If not found returns or parse errors the "def".
+	PostValueIntDefault(name string, def int) int
 	// PostValueInt64 returns the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name", as float64.
 	//
-	// If not found returns 0.0.
+	// If not found returns -1 and a no-nil error.
 	PostValueInt64(name string) (int64, error)
+	// PostValueInt64Default returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as int64.
+	//
+	// If not found or parse errors returns the "def".
+	PostValueInt64Default(name string, def int64) int64
 	// PostValueInt64Default returns the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name", as float64.
 	//
-	// If not found returns the "def".
-	PostValueFloat64Default(name string, def float64) (float64, error)
-	/// PostValueInt64Default returns the parsed form data from POST, PATCH,
+	// If not found returns -1 and a non-nil error.
+	PostValueFloat64(name string) (float64, error)
+	// PostValueInt64Default returns the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name", as float64.
 	//
-	// If not found returns 0.0.
-	PostValueFloat64(name string) (float64, error)
+	// If not found or parse errors returns the "def".
+	PostValueFloat64Default(name string, def float64) float64
 	// PostValueInt64Default returns the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name", as bool.
 	//
@@ -550,6 +567,8 @@ type Context interface {
 	//
 	// The default form's memory maximum size is 32MB, it can be changed by the
 	//  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/http_request/upload-file
 	FormFile(key string) (multipart.File, *multipart.FileHeader, error)
 	// UploadFormFiles uploads any received file(s) from the client
 	// to the system physical location "destDirectory".
@@ -574,6 +593,9 @@ type Context interface {
 	//  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 	//
 	// See `FormFile` to a more controlled to receive a file.
+	//
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/http_request/upload-files
 	UploadFormFiles(destDirectory string, before ...func(Context, *multipart.FileHeader)) (n int64, err error)
 
 	//  +------------------------------------------------------------+
@@ -596,16 +618,24 @@ type Context interface {
 	// should be called before reading the request body from the client.
 	SetMaxRequestBodySize(limitOverBytes int64)
 
-	// UnmarshalBody reads the request's body and binds it to a value or pointer of any type
+	// UnmarshalBody reads the request's body and binds it to a value or pointer of any type.
 	// Examples of usage: context.ReadJSON, context.ReadXML.
-	UnmarshalBody(v interface{}, unmarshaler Unmarshaler) error
-	// ReadJSON reads JSON from request's body and binds it to a value of any json-valid type.
-	ReadJSON(jsonObject interface{}) error
-	// ReadXML reads XML from request's body and binds it to a value of any xml-valid type.
-	ReadXML(xmlObject interface{}) error
+	//
+	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-via-unmarshaler/main.go
+	UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) error
+	// ReadJSON reads JSON from request's body and binds it to a pointer of a value of any json-valid type.
+	//
+	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-json/main.go
+	ReadJSON(jsonObjectPtr interface{}) error
+	// ReadXML reads XML from request's body and binds it to a pointer of a value of any xml-valid type.
+	//
+	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-xml/main.go
+	ReadXML(xmlObjectPtr interface{}) error
 	// ReadForm binds the formObject  with the form data
 	// it supports any kind of struct.
-	ReadForm(formObject interface{}) error
+	//
+	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-form/main.go
+	ReadForm(formObjectPtr interface{}) error
 
 	//  +------------------------------------------------------------+
 	//  | Body (raw) Writers                                         |
@@ -824,18 +854,41 @@ type Context interface {
 	//  | Cookies                                                    |
 	//  +------------------------------------------------------------+
 
-	// SetCookie adds a cookie
-	SetCookie(cookie *http.Cookie)
-	// SetCookieKV adds a cookie, receives just a name(string) and a value(string)
+	// SetCookie adds a cookie.
+	// Use of the "options" is not required, they can be used to amend the "cookie".
 	//
-	// If you use this method, it expires at 2 hours
-	// use ctx.SetCookie or http.SetCookie if you want to change more fields.
-	SetCookieKV(name, value string)
+	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+	SetCookie(cookie *http.Cookie, options ...CookieOption)
+	// SetCookieKV adds a cookie, requires the name(string) and the value(string).
+	//
+	// By default it expires at 2 hours and it's added to the root path,
+	// use the `CookieExpires` and `CookiePath` to modify them.
+	// Alternatively: ctx.SetCookie(&http.Cookie{...})
+	//
+	// If you want to set custom the path:
+	// ctx.SetCookieKV(name, value, iris.CookiePath("/custom/path/cookie/will/be/stored"))
+	//
+	// If you want to be visible only to current request path:
+	// ctx.SetCookieKV(name, value, iris.CookieCleanPath/iris.CookiePath(""))
+	// More:
+	//                              iris.CookieExpires(time.Duration)
+	//                              iris.CookieHTTPOnly(false)
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+	SetCookieKV(name, value string, options ...CookieOption)
 	// GetCookie returns cookie's value by it's name
 	// returns empty string if nothing was found.
-	GetCookie(name string) string
-	// RemoveCookie deletes a cookie by it's name.
-	RemoveCookie(name string)
+	//
+	// If you want more than the value then:
+	// cookie, err := ctx.Request().Cookie("name")
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+	GetCookie(name string, options ...CookieOption) string
+	// RemoveCookie deletes a cookie by it's name and path = "/".
+	// Tip: change the cookie's path to the current one by: RemoveCookie("name", iris.CookieCleanPath)
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+	RemoveCookie(name string, options ...CookieOption)
 	// VisitAllCookies takes a visitor which loops
 	// on each (request's) cookies' name and value.
 	VisitAllCookies(visitor func(name string, value string))
@@ -880,7 +933,7 @@ type Context interface {
 	// TransactionsSkipped returns true if the transactions skipped or canceled at all.
 	TransactionsSkipped() bool
 
-	// Exec calls the framewrok's ServeCtx
+	// Exec calls the `context/Application#ServeCtx`
 	// based on this context but with a changed method and path
 	// like it was requested by the user, but it is not.
 	//
@@ -903,7 +956,11 @@ type Context interface {
 	// Context's Values and the Session are kept in order to be able to communicate via the result route.
 	//
 	// It's for extreme use cases, 99% of the times will never be useful for you.
-	Exec(method string, path string)
+	Exec(method, path string)
+
+	// RouteExists reports whether a particular route exists
+	// It will search from the current subdomain of context's host, if not inside the root domain.
+	RouteExists(method, path string) bool
 
 	// Application returns the iris app instance which belongs to this context.
 	// Worth to notice that this function returns an interface
@@ -942,35 +999,6 @@ func Do(ctx Context, handlers Handlers) {
 var LimitRequestBodySize = func(maxRequestBodySizeBytes int64) Handler {
 	return func(ctx Context) {
 		ctx.SetMaxRequestBodySize(maxRequestBodySizeBytes)
-		ctx.Next()
-	}
-}
-
-// Cache304 sends a `StatusNotModified` (304) whenever
-// the "If-Modified-Since" request header (time) is before the
-// time.Now() + expiresEvery (always compared to their UTC values).
-// Use this `context#Cache304` instead of the "github.com/kataras/iris/cache" or iris.Cache
-// for better performance.
-// Clients that are compatible with the http RCF (all browsers are and tools like postman)
-// will handle the caching.
-// The only disadvantage of using that instead of server-side caching
-// is that this method will send a 304 status code instead of 200,
-// So, if you use it side by side with other micro services
-// you have to check for that status code as well for a valid response.
-//
-// Developers are free to extend this method's behavior
-// by watching system directories changes manually and use of the `ctx.WriteWithExpiration`
-// with a "modtime" based on the file modified date,
-// simillary to the `StaticWeb`(StaticWeb sends an OK(200) and browser disk caching instead of 304).
-var Cache304 = func(expiresEvery time.Duration) Handler {
-	return func(ctx Context) {
-		now := time.Now()
-		if modified, err := ctx.CheckIfModifiedSince(now.Add(-expiresEvery)); !modified && err == nil {
-			ctx.WriteNotModified()
-			return
-		}
-
-		ctx.SetLastModified(now)
 		ctx.Next()
 	}
 }
@@ -1228,7 +1256,7 @@ func (ctx *context) HandlerName() string {
 // It can be changed to a customized one if needed (very advanced usage).
 //
 // See `DefaultNext` for more information about this and why it's exported like this.
-var Next = DefaultNext ///TODO: add an example for this usecase, i.e describe handlers and skip only file handlers.
+var Next = DefaultNext
 
 // DefaultNext is the default function that executed on each middleware if `ctx.Next()`
 // is called.
@@ -1260,7 +1288,39 @@ func (ctx *context) Next() { // or context.Next(ctx)
 	Next(ctx)
 }
 
-// NextHandler returns, but it doesn't executes, the next handler from the handlers chain.
+// NextOr checks if chain has a next handler, if so then it executes it
+// otherwise it sets a new chain assigned to this Context based on the given handler(s)
+// and executes its first handler.
+//
+// Returns true if next handler exists and executed, otherwise false.
+//
+// Note that if no next handler found and handlers are missing then
+// it sends a Status Not Found (404) to the client and it stops the execution.
+func (ctx *context) NextOr(handlers ...Handler) bool {
+	if next := ctx.NextHandler(); next != nil {
+		next(ctx)
+		ctx.Skip() // skip this handler from the chain.
+		return true
+	}
+
+	if len(handlers) == 0 {
+		ctx.NotFound()
+		ctx.StopExecution()
+		return false
+	}
+
+	ctx.Do(handlers)
+
+	return false
+}
+
+// NextOrNotFound checks if chain has a next handler, if so then it executes it
+// otherwise it sends a Status Not Found (404) to the client and stops the execution.
+//
+// Returns true if next handler exists and executed, otherwise false.
+func (ctx *context) NextOrNotFound() bool { return ctx.NextOr() }
+
+// NextHandler returns (it doesn't execute) the next handler from the handlers chain.
 //
 // Use .Skip() to skip this handler if needed to execute the next of this returning handler.
 func (ctx *context) NextHandler() Handler {
@@ -1536,8 +1596,6 @@ func (ctx *context) Header(name string, value string) {
 	ctx.writer.Header().Add(name, value)
 }
 
-const contentTypeHeaderKey = "Content-Type"
-
 // ContentType sets the response writer's header key "Content-Type" to the 'cType'.
 func (ctx *context) ContentType(cType string) {
 	if cType == "" {
@@ -1557,13 +1615,23 @@ func (ctx *context) ContentType(cType string) {
 		}
 	}
 
-	ctx.writer.Header().Set(contentTypeHeaderKey, cType)
+	ctx.writer.Header().Set(ContentTypeHeaderKey, cType)
 }
 
 // GetContentType returns the response writer's header value of "Content-Type"
 // which may, setted before with the 'ContentType'.
 func (ctx *context) GetContentType() string {
-	return ctx.writer.Header().Get(contentTypeHeaderKey)
+	return ctx.writer.Header().Get(ContentTypeHeaderKey)
+}
+
+// GetContentLength returns the request's header value of "Content-Length".
+// Returns 0 if header was unable to be found or its value was not a valid number.
+func (ctx *context) GetContentLength() int64 {
+	if v := ctx.GetHeader(ContentLengthHeaderKey); v != "" {
+		n, _ := strconv.ParseInt(v, 10, 64)
+		return n
+	}
+	return 0
 }
 
 // StatusCode sets the status code header to the response.
@@ -1606,79 +1674,103 @@ func (ctx *context) URLParamExists(name string) bool {
 
 // URLParamDefault returns the get parameter from a request, if not found then "def" is returned.
 func (ctx *context) URLParamDefault(name string, def string) string {
-	v := ctx.request.URL.Query().Get(name)
-	if v == "" {
-		return def
+	if v := ctx.request.URL.Query().Get(name); v != "" {
+		return v
 	}
-	return v
+
+	return def
 }
 
-// URLParam returns the get parameter from a request , if any.
+// URLParam returns the get parameter from a request, if any.
 func (ctx *context) URLParam(name string) string {
 	return ctx.URLParamDefault(name, "")
 }
 
-// URLParamTrim returns the url query parameter with trailing white spaces removed from a request,
-// returns an error if parse failed.
+// URLParamTrim returns the url query parameter with trailing white spaces removed from a request.
 func (ctx *context) URLParamTrim(name string) string {
 	return strings.TrimSpace(ctx.URLParam(name))
 }
 
-// URLParamTrim returns the escaped url query parameter from a request,
-// returns an error if parse failed.
+// URLParamTrim returns the escaped url query parameter from a request.
 func (ctx *context) URLParamEscape(name string) string {
 	return DecodeQuery(ctx.URLParam(name))
 }
 
-// URLParamIntDefault returns the url query parameter as int value from a request,
-// if not found then "def" is returned.
-// Returns an error if parse failed.
-func (ctx *context) URLParamIntDefault(name string, def int) (int, error) {
-	v := ctx.URLParam(name)
-	if v == "" {
-		return def, nil
-	}
-	return strconv.Atoi(v)
-}
+var errURLParamNotFound = errors.New("url param '%s' does not exist")
 
 // URLParamInt returns the url query parameter as int value from a request,
-// returns an error if parse failed.
+// returns -1 and an error if parse failed or not found.
 func (ctx *context) URLParamInt(name string) (int, error) {
-	return ctx.URLParamIntDefault(name, 0)
+	if v := ctx.URLParam(name); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			return -1, err
+		}
+		return n, nil
+	}
+
+	return -1, errURLParamNotFound.Format(name)
 }
 
-// URLParamInt64Default returns the url query parameter as int64 value from a request,
-// if not found then "def" is returned.
-// Returns an error if parse failed.
-func (ctx *context) URLParamInt64Default(name string, def int64) (int64, error) {
-	v := ctx.URLParam(name)
-	if v == "" {
-		return def, nil
+// URLParamIntDefault returns the url query parameter as int value from a request,
+// if not found or parse failed then "def" is returned.
+func (ctx *context) URLParamIntDefault(name string, def int) int {
+	v, err := ctx.URLParamInt(name)
+	if err != nil {
+		return def
 	}
-	return strconv.ParseInt(v, 10, 64)
+
+	return v
 }
 
 // URLParamInt64 returns the url query parameter as int64 value from a request,
-// returns an error if parse failed.
+// returns -1 and an error if parse failed or not found.
 func (ctx *context) URLParamInt64(name string) (int64, error) {
-	return ctx.URLParamInt64Default(name, 0.0)
+	if v := ctx.URLParam(name); v != "" {
+		n, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return -1, err
+		}
+		return n, nil
+	}
+
+	return -1, errURLParamNotFound.Format(name)
 }
 
-// URLParamFloat64Default returns the url query parameter as float64 value from a request,
-// if not found then "def" is returned.
-// Returns an error if parse failed.
-func (ctx *context) URLParamFloat64Default(name string, def float64) (float64, error) {
-	v := ctx.URLParam(name)
-	if v == "" {
-		return def, nil
+// URLParamInt64Default returns the url query parameter as int64 value from a request,
+// if not found or parse failed then "def" is returned.
+func (ctx *context) URLParamInt64Default(name string, def int64) int64 {
+	v, err := ctx.URLParamInt64(name)
+	if err != nil {
+		return def
 	}
-	return strconv.ParseFloat(v, 64)
+
+	return v
 }
 
 // URLParamFloat64 returns the url query parameter as float64 value from a request,
-// returns an error if parse failed.
+// returns an error and -1 if parse failed.
 func (ctx *context) URLParamFloat64(name string) (float64, error) {
-	return ctx.URLParamFloat64Default(name, 0.0)
+	if v := ctx.URLParam(name); v != "" {
+		n, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return -1, err
+		}
+		return n, nil
+	}
+
+	return -1, errURLParamNotFound.Format(name)
+}
+
+// URLParamFloat64Default returns the url query parameter as float64 value from a request,
+// if not found or parse failed then "def" is returned.
+func (ctx *context) URLParamFloat64Default(name string, def float64) float64 {
+	v, err := ctx.URLParamFloat64(name)
+	if err != nil {
+		return def
+	}
+
+	return v
 }
 
 // URLParamBool returns the url query parameter as boolean value from a request,
@@ -1801,54 +1893,64 @@ func (ctx *context) PostValueTrim(name string) string {
 	return strings.TrimSpace(ctx.PostValue(name))
 }
 
-// PostValueIntDefault returns the parsed form data from POST, PATCH,
-// or PUT body parameters based on a "name", as int.
-//
-// If not found returns the "def".
-func (ctx *context) PostValueIntDefault(name string, def int) (int, error) {
-	v := ctx.PostValue(name)
-	if v == "" {
-		return def, nil
-	}
-	return strconv.Atoi(v)
-}
+var errUnableToFindPostValue = errors.New("unable to find post value '%s'")
 
 // PostValueInt returns the parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as int.
 //
-// If not found returns 0.
+// If not found returns -1 and a non-nil error.
 func (ctx *context) PostValueInt(name string) (int, error) {
-	return ctx.PostValueIntDefault(name, 0)
-}
-
-// PostValueInt64Default returns the parsed form data from POST, PATCH,
-// or PUT body parameters based on a "name", as int64.
-//
-// If not found returns the "def".
-func (ctx *context) PostValueInt64Default(name string, def int64) (int64, error) {
 	v := ctx.PostValue(name)
 	if v == "" {
-		return def, nil
+		return -1, errUnableToFindPostValue.Format(name)
 	}
-	return strconv.ParseInt(v, 10, 64)
+	return strconv.Atoi(v)
+}
+
+// PostValueIntDefault returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as int.
+//
+// If not found or parse errors returns the "def".
+func (ctx *context) PostValueIntDefault(name string, def int) int {
+	if v, err := ctx.PostValueInt(name); err == nil {
+		return v
+	}
+
+	return def
 }
 
 // PostValueInt64 returns the parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as float64.
 //
-// If not found returns 0.0.
+// If not found returns -1 and a non-nil error.
 func (ctx *context) PostValueInt64(name string) (int64, error) {
-	return ctx.PostValueInt64Default(name, 0.0)
+	v := ctx.PostValue(name)
+	if v == "" {
+		return -1, errUnableToFindPostValue.Format(name)
+	}
+	return strconv.ParseInt(v, 10, 64)
+}
+
+// PostValueInt64Default returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as int64.
+//
+// If not found or parse errors returns the "def".
+func (ctx *context) PostValueInt64Default(name string, def int64) int64 {
+	if v, err := ctx.PostValueInt64(name); err == nil {
+		return v
+	}
+
+	return def
 }
 
 // PostValueInt64Default returns the parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as float64.
 //
-// If not found returns the "def".
-func (ctx *context) PostValueFloat64Default(name string, def float64) (float64, error) {
+// If not found returns -1 and a non-nil error.
+func (ctx *context) PostValueFloat64(name string) (float64, error) {
 	v := ctx.PostValue(name)
 	if v == "" {
-		return def, nil
+		return -1, errUnableToFindPostValue.Format(name)
 	}
 	return strconv.ParseFloat(v, 64)
 }
@@ -1856,9 +1958,13 @@ func (ctx *context) PostValueFloat64Default(name string, def float64) (float64, 
 // PostValueInt64Default returns the parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as float64.
 //
-// If not found returns 0.0.
-func (ctx *context) PostValueFloat64(name string) (float64, error) {
-	return ctx.PostValueFloat64Default(name, 0.0)
+// If not found or parse errors returns the "def".
+func (ctx *context) PostValueFloat64Default(name string, def float64) float64 {
+	if v, err := ctx.PostValueFloat64(name); err == nil {
+		return v
+	}
+
+	return def
 }
 
 // PostValueInt64Default returns the parsed form data from POST, PATCH,
@@ -1866,7 +1972,12 @@ func (ctx *context) PostValueFloat64(name string) (float64, error) {
 //
 // If not found or value is false, then it returns false, otherwise true.
 func (ctx *context) PostValueBool(name string) (bool, error) {
-	return strconv.ParseBool(ctx.PostValue(name))
+	v := ctx.PostValue(name)
+	if v == "" {
+		return false, errUnableToFindPostValue.Format(name)
+	}
+
+	return strconv.ParseBool(v)
 }
 
 // PostValues returns all the parsed form data from POST, PATCH,
@@ -1884,13 +1995,18 @@ func (ctx *context) PostValues(name string) []string {
 //
 // The default form's memory maximum size is 32MB, it can be changed by the
 // `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/http_request/upload-file
 func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader, error) {
 	// we don't have access to see if the request is body stream
 	// and then the ParseMultipartForm can be useless
 	// here but do it in order to apply the post limit,
 	// the internal request.FormFile will not do it if that's filled
 	// and it's not a stream body.
-	ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
+	if err := ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory()); err != nil {
+		return nil, nil, err
+	}
+
 	return ctx.request.FormFile(key)
 }
 
@@ -1917,6 +2033,8 @@ func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader,
 //  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 //
 // See `FormFile` to a more controlled to receive a file.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/http_request/upload-files
 func (ctx *context) UploadFormFiles(destDirectory string, before ...func(Context, *multipart.FileHeader)) (n int64, err error) {
 	err = ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
 	if err != nil {
@@ -2008,7 +2126,9 @@ func (ctx *context) SetMaxRequestBodySize(limitOverBytes int64) {
 
 // UnmarshalBody reads the request's body and binds it to a value or pointer of any type
 // Examples of usage: context.ReadJSON, context.ReadXML.
-func (ctx *context) UnmarshalBody(v interface{}, unmarshaler Unmarshaler) error {
+//
+// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-via-unmarshaler/main.go
+func (ctx *context) UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) error {
 	if ctx.request.Body == nil {
 		return errors.New("unmarshal: empty body")
 	}
@@ -2028,18 +2148,19 @@ func (ctx *context) UnmarshalBody(v interface{}, unmarshaler Unmarshaler) error 
 	// in this case the v should be a pointer also,
 	// but this is up to the user's custom Decode implementation*
 	//
-	// See 'BodyDecoder' for more
-	if decoder, isDecoder := v.(BodyDecoder); isDecoder {
+	// See 'BodyDecoder' for more.
+	if decoder, isDecoder := outPtr.(BodyDecoder); isDecoder {
 		return decoder.Decode(rawData)
 	}
 
-	// check if v is already a pointer, if yes then pass as it's
-	if reflect.TypeOf(v).Kind() == reflect.Ptr {
-		return unmarshaler.Unmarshal(rawData, v)
-	}
-	// finally, if the v doesn't contains a self-body decoder and it's not a pointer
-	// use the custom unmarshaler to bind the body
-	return unmarshaler.Unmarshal(rawData, &v)
+	// // check if v is already a pointer, if yes then pass as it's
+	// if reflect.TypeOf(v).Kind() == reflect.Ptr {
+	// 	return unmarshaler.Unmarshal(rawData, v)
+	// } <- no need for that, ReadJSON is documented enough to receive a pointer,
+	// we don't need to reduce the performance here by using the reflect.TypeOf method.
+
+	// f the v doesn't contains a self-body decoder use the custom unmarshaler to bind the body.
+	return unmarshaler.Unmarshal(rawData, outPtr)
 }
 
 func (ctx *context) shouldOptimize() bool {
@@ -2047,6 +2168,8 @@ func (ctx *context) shouldOptimize() bool {
 }
 
 // ReadJSON reads JSON from request's body and binds it to a value of any json-valid type.
+//
+// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-json/main.go
 func (ctx *context) ReadJSON(jsonObject interface{}) error {
 	var unmarshaler = json.Unmarshal
 	if ctx.shouldOptimize() {
@@ -2056,6 +2179,8 @@ func (ctx *context) ReadJSON(jsonObject interface{}) error {
 }
 
 // ReadXML reads XML from request's body and binds it to a value of any xml-valid type.
+//
+// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-xml/main.go
 func (ctx *context) ReadXML(xmlObject interface{}) error {
 	return ctx.UnmarshalBody(xmlObject, UnmarshalerFunc(xml.Unmarshal))
 }
@@ -2066,6 +2191,8 @@ var (
 
 // ReadForm binds the formObject  with the form data
 // it supports any kind of struct.
+//
+// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-form/main.go
 func (ctx *context) ReadForm(formObject interface{}) error {
 	values := ctx.FormValues()
 	if values == nil {
@@ -2119,18 +2246,31 @@ func (ctx *context) WriteString(body string) (n int, err error) {
 	return ctx.writer.WriteString(body)
 }
 
-var (
-	// StaticCacheDuration expiration duration for INACTIVE file handlers, it's the only one global configuration
-	// which can be changed.
-	StaticCacheDuration = 20 * time.Second
+const (
+	// ContentTypeHeaderKey is the header key of "Content-Type".
+	ContentTypeHeaderKey = "Content-Type"
 
-	lastModifiedHeaderKey       = "Last-Modified"
-	ifModifiedSinceHeaderKey    = "If-Modified-Since"
-	contentDispositionHeaderKey = "Content-Disposition"
-	cacheControlHeaderKey       = "Cache-Control"
-	contentEncodingHeaderKey    = "Content-Encoding"
-	acceptEncodingHeaderKey     = "Accept-Encoding"
-	varyHeaderKey               = "Vary"
+	// LastModifiedHeaderKey is the header key of "Last-Modified".
+	LastModifiedHeaderKey = "Last-Modified"
+	// IfModifiedSinceHeaderKey is the header key of "If-Modified-Since".
+	IfModifiedSinceHeaderKey = "If-Modified-Since"
+	// CacheControlHeaderKey is the header key of "Cache-Control".
+	CacheControlHeaderKey = "Cache-Control"
+	// ETagHeaderKey is the header key of "ETag".
+	ETagHeaderKey = "ETag"
+
+	// ContentDispositionHeaderKey is the header key of "Content-Disposition".
+	ContentDispositionHeaderKey = "Content-Disposition"
+	// ContentLengthHeaderKey is the header key of "Content-Length"
+	ContentLengthHeaderKey = "Content-Length"
+	// ContentEncodingHeaderKey is the header key of "Content-Encoding".
+	ContentEncodingHeaderKey = "Content-Encoding"
+	// GzipHeaderValue is the header value of "gzip".
+	GzipHeaderValue = "gzip"
+	// AcceptEncodingHeaderKey is the header key of "Accept-Encoding".
+	AcceptEncodingHeaderKey = "Accept-Encoding"
+	// VaryHeaderKey is the header key of "Vary".
+	VaryHeaderKey = "Vary"
 )
 
 var unixEpochTime = time.Unix(0, 0)
@@ -2171,7 +2311,7 @@ var FormatTime = func(ctx Context, t time.Time) string {
 // It's mostly internally on core/router and context packages.
 func (ctx *context) SetLastModified(modtime time.Time) {
 	if !IsZeroTime(modtime) {
-		ctx.Header(lastModifiedHeaderKey, FormatTime(ctx, modtime.UTC())) // or modtime.UTC()?
+		ctx.Header(LastModifiedHeaderKey, FormatTime(ctx, modtime.UTC())) // or modtime.UTC()?
 	}
 }
 
@@ -2193,7 +2333,7 @@ func (ctx *context) CheckIfModifiedSince(modtime time.Time) (bool, error) {
 	if method := ctx.Method(); method != http.MethodGet && method != http.MethodHead {
 		return false, errors.New("skip: method")
 	}
-	ims := ctx.GetHeader(ifModifiedSinceHeaderKey)
+	ims := ctx.GetHeader(IfModifiedSinceHeaderKey)
 	if ims == "" || IsZeroTime(modtime) {
 		return false, errors.New("skip: zero time")
 	}
@@ -2221,10 +2361,10 @@ func (ctx *context) WriteNotModified() {
 	// guiding cache updates (e.g.," Last-Modified" might be useful if the
 	// response does not have an ETag field).
 	h := ctx.ResponseWriter().Header()
-	delete(h, contentTypeHeaderKey)
-	delete(h, contentLengthHeaderKey)
-	if h.Get("Etag") != "" {
-		delete(h, lastModifiedHeaderKey)
+	delete(h, ContentTypeHeaderKey)
+	delete(h, ContentLengthHeaderKey)
+	if h.Get(ETagHeaderKey) != "" {
+		delete(h, LastModifiedHeaderKey)
 	}
 	ctx.StatusCode(http.StatusNotModified)
 }
@@ -2279,9 +2419,9 @@ func (ctx *context) StreamWriter(writer func(w io.Writer) bool) {
 
 // ClientSupportsGzip retruns true if the client supports gzip compression.
 func (ctx *context) ClientSupportsGzip() bool {
-	if h := ctx.GetHeader(acceptEncodingHeaderKey); h != "" {
+	if h := ctx.GetHeader(AcceptEncodingHeaderKey); h != "" {
 		for _, v := range strings.Split(h, ";") {
-			if strings.Contains(v, "gzip") { // we do Contains because sometimes browsers has the q=, we don't use it atm. || strings.Contains(v,"deflate"){
+			if strings.Contains(v, GzipHeaderValue) { // we do Contains because sometimes browsers has the q=, we don't use it atm. || strings.Contains(v,"deflate"){
 				return true
 			}
 		}
@@ -2816,11 +2956,6 @@ var (
 	errServeContent = errors.New("while trying to serve content to the client. Trace %s")
 )
 
-const (
-	// contentLengthHeaderKey represents the header["Content-Length"]
-	contentLengthHeaderKey = "Content-Length"
-)
-
 // ServeContent serves content, headers are autoset
 // receives three parameters, it's low-level function, instead you can use .ServeFile(string,bool)/SendFile(string,string)
 //
@@ -2836,8 +2971,7 @@ func (ctx *context) ServeContent(content io.ReadSeeker, filename string, modtime
 	ctx.SetLastModified(modtime)
 	var out io.Writer
 	if gzipCompression && ctx.ClientSupportsGzip() {
-		ctx.writer.Header().Add(varyHeaderKey, acceptEncodingHeaderKey)
-		ctx.Header(contentEncodingHeaderKey, "gzip")
+		AddGzipHeaders(ctx.writer)
 
 		gzipWriter := acquireGzipWriter(ctx.writer)
 		defer releaseGzipWriter(gzipWriter)
@@ -2876,62 +3010,194 @@ func (ctx *context) ServeFile(filename string, gzipCompression bool) error {
 //
 // Use this instead of ServeFile to 'force-download' bigger files to the client.
 func (ctx *context) SendFile(filename string, destinationName string) error {
-	ctx.writer.Header().Set(contentDispositionHeaderKey, "attachment;filename="+destinationName)
+	ctx.writer.Header().Set(ContentDispositionHeaderKey, "attachment;filename="+destinationName)
 	return ctx.ServeFile(filename, false)
 }
 
 //  +------------------------------------------------------------+
-//  | Cookies, Session and Flashes                               |
+//  | Cookies                                                    |
 //  +------------------------------------------------------------+
 
-// SetCookie adds a cookie
-func (ctx *context) SetCookie(cookie *http.Cookie) {
+// CookieOption is the type of function that is accepted on
+// context's methods like `SetCookieKV`, `RemoveCookie` and `SetCookie`
+// as their (last) variadic input argument to amend the end cookie's form.
+//
+// Any custom or built'n `CookieOption` is valid,
+// see `CookiePath`, `CookieCleanPath`, `CookieExpires` and `CookieHTTPOnly` for more.
+type CookieOption func(*http.Cookie)
+
+// CookiePath is a `CookieOption`.
+// Use it to change the cookie's Path field.
+func CookiePath(path string) CookieOption {
+	return func(c *http.Cookie) {
+		c.Path = path
+	}
+}
+
+// CookieCleanPath is a `CookieOption`.
+// Use it to clear the cookie's Path field, exactly the same as `CookiePath("")`.
+func CookieCleanPath(c *http.Cookie) {
+	c.Path = ""
+}
+
+// CookieExpires is a `CookieOption`.
+// Use it to change the cookie's Expires and MaxAge fields by passing the lifetime of the cookie.
+func CookieExpires(durFromNow time.Duration) CookieOption {
+	return func(c *http.Cookie) {
+		c.Expires = time.Now().Add(durFromNow)
+		c.MaxAge = int(durFromNow.Seconds())
+	}
+}
+
+// CookieHTTPOnly is a `CookieOption`.
+// Use it to set the cookie's HttpOnly field to false or true.
+// HttpOnly field defaults to true for `RemoveCookie` and `SetCookieKV`.
+func CookieHTTPOnly(httpOnly bool) CookieOption {
+	return func(c *http.Cookie) {
+		c.HttpOnly = httpOnly
+	}
+}
+
+type (
+	// CookieEncoder should encode the cookie value.
+	// Should accept as first argument the cookie name
+	// and as second argument the cookie value ptr.
+	// Should return an encoded value or an empty one if encode operation failed.
+	// Should return an error if encode operation failed.
+	//
+	// Note: Errors are not printed, so you have to know what you're doing,
+	// and remember: if you use AES it only supports key sizes of 16, 24 or 32 bytes.
+	// You either need to provide exactly that amount or you derive the key from what you type in.
+	//
+	// See `CookieDecoder` too.
+	CookieEncoder func(cookieName string, value interface{}) (string, error)
+	// CookieDecoder should decode the cookie value.
+	// Should accept as first argument the cookie name,
+	// as second argument the encoded cookie value and as third argument the decoded value ptr.
+	// Should return a decoded value or an empty one if decode operation failed.
+	// Should return an error if decode operation failed.
+	//
+	// Note: Errors are not printed, so you have to know what you're doing,
+	// and remember: if you use AES it only supports key sizes of 16, 24 or 32 bytes.
+	// You either need to provide exactly that amount or you derive the key from what you type in.
+	//
+	// See `CookieEncoder` too.
+	CookieDecoder func(cookieName string, cookieValue string, v interface{}) error
+)
+
+// CookieEncode is a `CookieOption`.
+// Provides encoding functionality when adding a cookie.
+// Accepts a `CookieEncoder` and sets the cookie's value to the encoded value.
+// Users of that is the `SetCookie` and `SetCookieKV`.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
+func CookieEncode(encode CookieEncoder) CookieOption {
+	return func(c *http.Cookie) {
+		newVal, err := encode(c.Name, c.Value)
+		if err != nil {
+			c.Value = ""
+		} else {
+			c.Value = newVal
+		}
+	}
+}
+
+// CookieDecode is a `CookieOption`.
+// Provides decoding functionality when retrieving a cookie.
+// Accepts a `CookieDecoder` and sets the cookie's value to the decoded value before return by the `GetCookie`.
+// User of that is the `GetCookie`.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
+func CookieDecode(decode CookieDecoder) CookieOption {
+	return func(c *http.Cookie) {
+		if err := decode(c.Name, c.Value, &c.Value); err != nil {
+			c.Value = ""
+		}
+	}
+}
+
+// SetCookie adds a cookie.
+// Use of the "options" is not required, they can be used to amend the "cookie".
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+func (ctx *context) SetCookie(cookie *http.Cookie, options ...CookieOption) {
+	for _, opt := range options {
+		opt(cookie)
+	}
+
 	http.SetCookie(ctx.writer, cookie)
 }
 
-var (
-	// SetCookieKVExpiration is 2 hours by-default
-	// you can change it or simple, use the SetCookie for more control.
-	SetCookieKVExpiration = time.Duration(120) * time.Minute
-)
-
-// SetCookieKV adds a cookie, receives just a name(string) and a value(string)
+// SetCookieKV adds a cookie, requires the name(string) and the value(string).
 //
-// If you use this method, it expires at 2 hours
-// use ctx.SetCookie or http.SetCookie if you want to change more fields.
-func (ctx *context) SetCookieKV(name, value string) {
+// By default it expires at 2 hours and it's added to the root path,
+// use the `CookieExpires` and `CookiePath` to modify them.
+// Alternatively: ctx.SetCookie(&http.Cookie{...})
+//
+// If you want to set custom the path:
+// ctx.SetCookieKV(name, value, iris.CookiePath("/custom/path/cookie/will/be/stored"))
+//
+// If you want to be visible only to current request path:
+// (note that client should be responsible for that if server sent an empty cookie's path, all browsers are compatible)
+// ctx.SetCookieKV(name, value, iris.CookieCleanPath/iris.CookiePath(""))
+// More:
+//                              iris.CookieExpires(time.Duration)
+//                              iris.CookieHTTPOnly(false)
+//
+// Examples: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+func (ctx *context) SetCookieKV(name, value string, options ...CookieOption) {
 	c := &http.Cookie{}
+	c.Path = "/"
 	c.Name = name
 	c.Value = url.QueryEscape(value)
 	c.HttpOnly = true
 	c.Expires = time.Now().Add(SetCookieKVExpiration)
 	c.MaxAge = int(SetCookieKVExpiration.Seconds())
-	ctx.SetCookie(c)
+	ctx.SetCookie(c, options...)
 }
 
 // GetCookie returns cookie's value by it's name
 // returns empty string if nothing was found.
-func (ctx *context) GetCookie(name string) string {
+//
+// If you want more than the value then:
+// cookie, err := ctx.Request().Cookie("name")
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+func (ctx *context) GetCookie(name string, options ...CookieOption) string {
 	cookie, err := ctx.request.Cookie(name)
 	if err != nil {
 		return ""
 	}
+
+	for _, opt := range options {
+		opt(cookie)
+	}
+
 	value, _ := url.QueryUnescape(cookie.Value)
 	return value
 }
 
-// RemoveCookie deletes a cookie by it's name.
-func (ctx *context) RemoveCookie(name string) {
+// SetCookieKVExpiration is 2 hours by-default
+// you can change it or simple, use the SetCookie for more control.
+//
+// See `SetCookieKVExpiration` and `CookieExpires` for more.
+var SetCookieKVExpiration = time.Duration(120) * time.Minute
+
+// RemoveCookie deletes a cookie by it's name and path = "/".
+// Tip: change the cookie's path to the current one by: RemoveCookie("name", iris.CookieCleanPath)
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+func (ctx *context) RemoveCookie(name string, options ...CookieOption) {
 	c := &http.Cookie{}
 	c.Name = name
 	c.Value = ""
-	c.Path = "/"
+	c.Path = "/" // if user wants to change it, use of the CookieOption `CookiePath` is required if not `ctx.SetCookie`.
 	c.HttpOnly = true
-	// RFC says 1 second, but let's do it 1 minute to make sure is working
+	// RFC says 1 second, but let's do it 1  to make sure is working
 	exp := time.Now().Add(-time.Duration(1) * time.Minute)
 	c.Expires = exp
 	c.MaxAge = -1
-	ctx.SetCookie(c)
+	ctx.SetCookie(c, options...)
 	// delete request's cookie also, which is temporary available.
 	ctx.request.Header.Set("Cookie", "")
 }
@@ -2950,7 +3216,7 @@ var maxAgeExp = regexp.MustCompile(`maxage=(\d+)`)
 // seconds as int64
 // if header not found or parse failed then it returns -1.
 func (ctx *context) MaxAge() int64 {
-	header := ctx.GetHeader(cacheControlHeaderKey)
+	header := ctx.GetHeader(CacheControlHeaderKey)
 	if header == "" {
 		return -1
 	}
@@ -3086,48 +3352,56 @@ func (ctx *context) TransactionsSkipped() bool {
 //
 // It's for extreme use cases, 99% of the times will never be useful for you.
 func (ctx *context) Exec(method string, path string) {
-	if path != "" {
-		if method == "" {
-			method = "GET"
-		}
-
-		// backup the handlers
-		backupHandlers := ctx.Handlers()[0:]
-		backupPos := ctx.HandlerIndex(-1)
-
-		// backup the request path information
-		backupPath := ctx.Path()
-		bakcupMethod := ctx.Method()
-		// don't backupValues := ctx.Values().ReadOnly()
-
-		// [sessions stays]
-		// [values stays]
-		// reset handlers
-		ctx.SetHandlers(nil)
-
-		req := ctx.Request()
-		// set the request to be align with the 'againstRequestPath'
-		req.RequestURI = path
-		req.URL.Path = path
-		req.Method = method
-		// execute the route from the (internal) context router
-		// this way we keep the sessions and the values
-		ctx.Application().ServeHTTPC(ctx)
-
-		// set back the old handlers and the last known index
-		ctx.SetHandlers(backupHandlers)
-		ctx.HandlerIndex(backupPos)
-		// set the request back to its previous state
-		req.RequestURI = backupPath
-		req.URL.Path = backupPath
-		req.Method = bakcupMethod
-
-		// don't fill the values in order to be able to communicate from and to.
-		// // fill the values as they were before
-		// backupValues.Visit(func(key string, value interface{}) {
-		// 	ctx.Values().Set(key, value)
-		// })
+	if path == "" {
+		return
 	}
+
+	if method == "" {
+		method = "GET"
+	}
+
+	// backup the handlers
+	backupHandlers := ctx.Handlers()[0:]
+	backupPos := ctx.HandlerIndex(-1)
+
+	// backup the request path information
+	backupPath := ctx.Path()
+	backupMethod := ctx.Method()
+	// don't backupValues := ctx.Values().ReadOnly()
+
+	// [values stays]
+	// reset handlers
+	ctx.SetHandlers(nil)
+
+	req := ctx.Request()
+	// set the request to be align with the 'againstRequestPath'
+	req.RequestURI = path
+	req.URL.Path = path
+	req.Method = method
+
+	// execute the route from the (internal) context router
+	// this way we keep the sessions and the values
+	ctx.Application().ServeHTTPC(ctx)
+
+	// set back the old handlers and the last known index
+	ctx.SetHandlers(backupHandlers)
+	ctx.HandlerIndex(backupPos)
+	// set the request back to its previous state
+	req.RequestURI = backupPath
+	req.URL.Path = backupPath
+	req.Method = backupMethod
+
+	// don't fill the values in order to be able to communicate from and to.
+	// // fill the values as they were before
+	// backupValues.Visit(func(key string, value interface{}) {
+	// 	ctx.Values().Set(key, value)
+	// })
+}
+
+// RouteExists reports whether a particular route exists
+// It will search from the current subdomain of context's host, if not inside the root domain.
+func (ctx *context) RouteExists(method, path string) bool {
+	return ctx.Application().RouteExists(ctx, method, path)
 }
 
 // Application returns the iris app instance which belongs to this context.

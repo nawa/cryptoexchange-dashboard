@@ -6,9 +6,6 @@ import (
 	"github.com/kataras/iris/core/router/macro"
 )
 
-// Party is here to separate the concept of
-// api builder and the sub api builder.
-
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
 // Party could also be named as 'Join' or 'Node' or 'Group' , Party chosen because it is fun.
 //
@@ -64,10 +61,43 @@ type Party interface {
 	// The difference from .Use is that this/or these Handler(s) are being always running last.
 	Done(handlers ...context.Handler)
 	// Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,
-	// note that the `Reset` will not reset the handlers that are registered via `UseGlobal` & `DoneGlobal`.
+	// and the execution rules.
+	// Note that the `Reset` will not reset the handlers that are registered via `UseGlobal` & `DoneGlobal`.
 	//
 	// Returns this Party.
 	Reset() Party
+
+	// AllowMethods will re-register the future routes that will be registered
+	// via `Handle`, `Get`, `Post`, ... to the given "methods" on that Party and its children "Parties",
+	// duplicates are not registered.
+	//
+	// Call of `AllowMethod` will override any previous allow methods.
+	AllowMethods(methods ...string) Party
+
+	// SetExecutionRules alters the execution flow of the route handlers outside of the handlers themselves.
+	//
+	// For example, if for some reason the desired result is the (done or all) handlers to be executed no matter what
+	// even if no `ctx.Next()` is called in the previous handlers, including the begin(`Use`),
+	// the main(`Handle`) and the done(`Done`) handlers themselves, then:
+	// Party#SetExecutionRules(iris.ExecutionRules {
+	//   Begin: iris.ExecutionOptions{Force: true},
+	//   Main:  iris.ExecutionOptions{Force: true},
+	//   Done:  iris.ExecutionOptions{Force: true},
+	// })
+	//
+	// Note that if : true then the only remained way to "break" the handler chain is by `ctx.StopExecution()` now that `ctx.Next()` does not matter.
+	//
+	// These rules are per-party, so if a `Party` creates a child one then the same rules will be applied to that as well.
+	// Reset of these rules (before `Party#Handle`) can be done with `Party#SetExecutionRules(iris.ExecutionRules{})`.
+	//
+	// The most common scenario for its use can be found inside Iris MVC Applications;
+	// when we want the `Done` handlers of that specific mvc app's `Party`
+	// to be executed but we don't want to add `ctx.Next()` on the `OurController#EndRequest`.
+	//
+	// Returns this Party.
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/mvc/middleware/without-ctx-next
+	SetExecutionRules(executionRules ExecutionRules) Party
 	// Handle registers a route to the server's router.
 	// if empty method is passed then handler(s) are being registered to all methods, same as .Any.
 	//
@@ -183,7 +213,15 @@ type Party interface {
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-files-into-app
 	StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) *Route
-
+	// StaticEmbeddedGzip registers a route which can serve embedded gziped files
+	// that are embedded using the https://github.com/kataras/bindata tool and only.
+	// It's 8 times faster than the `StaticEmbeddedHandler` with `go-bindata` but
+	// it sends gzip response only, so the client must be aware that is expecting a gzip body
+	// (browsers and most modern browsers do that, so you can use it without fair).
+	//
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-gziped-files-into-app
+	StaticEmbeddedGzip(requestPath string, vdir string, gzipAssetFn func(name string) ([]byte, error), gzipNamesFn func() []string) *Route
 	// Favicon serves static favicon
 	// accepts 2 parameters, second is optional
 	// favPath (string), declare the system directory path of the __.ico

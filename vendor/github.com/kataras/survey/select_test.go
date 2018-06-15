@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/kataras/survey/core"
-	"github.com/kataras/survey/terminal"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/AlecAivazis/survey.v1/core"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 func init() {

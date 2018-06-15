@@ -1,4 +1,15 @@
 
+## v1.0.9 / 2018-06-14
+
+  * fix(url-encoding) add exact match test in MatchPath (#34)
+  * fix(travis): use string notation for Go versions
+
+## v1.0.8 / 2018-02-28
+
+  * chore(LICENSE): update year ;)
+  * feat(docs): add additional tips and examples
+  * feat(gock): ignore already intercepted http.Client
+
 ## v1.0.7 / 2017-12-21
 
   * Make MatchHost case insensitive. (#31)

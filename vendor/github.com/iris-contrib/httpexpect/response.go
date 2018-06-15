@@ -37,9 +37,13 @@ const (
 
 // Response provides methods to inspect attached http.Response object.
 type Response struct {
-	chain   chain
-	resp    *http.Response
-	content []byte
+	chain chain
+	resp  *http.Response
+	// Content "eaten" on makeResponse, so we can't manually read the `Expect().Raw().Body`
+	// therefore we just export this for now, we have a solution like we do on Iris
+	// to use a noop reader to not "eat" it but we don't need it here.
+	// Usage: `Expect().Content`.
+	Content []byte
 	cookies []*http.Cookie
 	time    time.Duration
 }
@@ -74,7 +78,7 @@ func makeResponse(
 	return &Response{
 		chain:   chain,
 		resp:    response,
-		content: content,
+		Content: content,
 		cookies: cookies,
 		time:    duration,
 	}
@@ -270,7 +274,7 @@ func (r *Response) Cookie(name string) *Cookie {
 //  resp.Body().NotEmpty()
 //  resp.Body().Length().Equal(100)
 func (r *Response) Body() *String {
-	return &String{r.chain, string(r.content)}
+	return &String{r.chain, string(r.Content)}
 }
 
 // NoContent succeeds if response contains empty Content-Type header and
@@ -283,7 +287,7 @@ func (r *Response) NoContent() *Response {
 	contentType := r.resp.Header.Get("Content-Type")
 
 	r.checkEqual("\"Content-Type\" header", "", contentType)
-	r.checkEqual("body", "", string(r.content))
+	r.checkEqual("body", "", string(r.Content))
 
 	return r
 }
@@ -333,7 +337,7 @@ func (r *Response) Text() *String {
 	var content string
 
 	if !r.chain.failed() && r.checkContentType("text/plain") {
-		content = string(r.content)
+		content = string(r.Content)
 	}
 
 	return &String{r.chain, content}
@@ -363,7 +367,7 @@ func (r *Response) getForm() map[string]interface{} {
 		return nil
 	}
 
-	decoder := form.NewDecoder(bytes.NewReader(r.content))
+	decoder := form.NewDecoder(bytes.NewReader(r.Content))
 
 	var object map[string]interface{}
 	if err := decoder.Decode(&object); err != nil {
@@ -398,7 +402,7 @@ func (r *Response) getJSON() interface{} {
 	}
 
 	var value interface{}
-	if err := json.Unmarshal(r.content, &value); err != nil {
+	if err := json.Unmarshal(r.Content, &value); err != nil {
 		r.chain.fail(err.Error())
 		return nil
 	}
@@ -438,12 +442,12 @@ func (r *Response) getJSONP(callback string) interface{} {
 		return nil
 	}
 
-	m := jsonp.FindSubmatch(r.content)
+	m := jsonp.FindSubmatch(r.Content)
 	if len(m) != 3 || string(m[1]) != callback {
 		r.chain.fail(
 			"\nexpected JSONP body in form of:\n \"%s(<valid json>)\"\n\nbut got:\n %q\n",
 			callback,
-			string(r.content))
+			string(r.Content))
 		return nil
 	}
 

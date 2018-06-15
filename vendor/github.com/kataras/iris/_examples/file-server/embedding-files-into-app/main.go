@@ -5,12 +5,13 @@ import (
 )
 
 // Follow these steps first:
-// $ go get -u github.com/jteeuwen/go-bindata/...
+// $ go get -u github.com/shuLhan/go-bindata/...
 // $ go-bindata ./assets/...
 // $ go build
 // $ ./embedding-files-into-app
 // "physical" files are not used, you can delete the "assets" folder and run the example.
-
+//
+// See `file-server/embedding-gziped-files-into-app` example as well.
 func newApp() *iris.Application {
 	app := iris.New()
 
