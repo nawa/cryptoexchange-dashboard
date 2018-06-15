@@ -9,4 +9,4 @@ RUN apk update \
     && apk --no-cache add --update -t ca-certificates  \
     && apk del --purge deps; rm -rf /tmp/* /var/cache/apk/*
 
-CMD /app/cryptoexchange-dashboard $CRWI_ARGS
+CMD /app/cryptoexchange-dashboard $CREXD_ARGS

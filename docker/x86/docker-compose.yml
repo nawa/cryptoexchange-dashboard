@@ -3,12 +3,12 @@ version: '3'
 services:
   sync:
     hostname: sync
-    image: ${CRWI_IMAGENAME_X86}
-    restart: ${CRWI_RESTART_POLICY}
+    image: ${CREXD_IMAGENAME_X86}
+    restart: ${CREXD_RESTART_POLICY}
     environment:
       - EXCHANGE_API_KEY
       - EXCHANGE_API_SECRET
-      - CRWI_ARGS=sync --period=$CRWI_SYNC_PERIOD --db-url=mongodb://mongo:27017/cryptoexchange-wallet
+      - CREXD_ARGS=sync --period=$CREXD_SYNC_PERIOD --db-url=mongodb://mongo:27017/$CREXD_MONGO_DBNAME
     links:
       - mongo
   
@@ -17,5 +17,5 @@ services:
     ports:
       - 28017:27017
     volumes: 
-      - ${CRWI_MONGO_VOLUME_DB}:/data/db
-      - ${CRWI_MONGO_VOLUME_CONFIG}:/data/configdb
+      - ${CREXD_MONGO_VOLUME_DB}:/data/db
+      - ${CREXD_MONGO_VOLUME_CONFIG}:/data/configdb

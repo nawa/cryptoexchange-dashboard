@@ -24,9 +24,9 @@ func (h *OrderHandler) GetActiveOrders(ctx iris.Context) {
 		return
 	}
 
-	var orderDTO []dto.OrderDTO
-	for _, o := range mOrders {
-		orderDTO = append(orderDTO, *dto.NewOrderDTO(o))
+	orderDTO := make([]dto.OrderDTO, len(mOrders))
+	for i, o := range mOrders {
+		orderDTO[i] = *dto.NewOrderDTO(o)
 	}
 	_, err = ctx.JSON(orderDTO)
 	if err != nil {

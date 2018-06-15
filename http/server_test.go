@@ -330,6 +330,19 @@ func TestOrderHandler_GetActiveOrders(t *testing.T) {
 				response.Body().Equal(`[{"market":"market1","market_link":"https://bittrex.com/Market/Index?MarketName=market1","time":0,"buy_rate":1,"amount":2,"sellnow_rate":3,"usdt_rate":4},{"market":"market2","market_link":"https://bittrex.com/Market/Index?MarketName=market2","time":3600,"buy_rate":5,"amount":6,"sellnow_rate":7,"usdt_rate":8}]`)
 			},
 		}, {
+			name: "correct with no orders",
+			test: func(t *testing.T, mock *HTTPServerMock) {
+				mock.OrderUC.EXPECT().
+					GetActiveOrders().
+					Return([]domain.Order{}, nil)
+
+				response := mock.HTTPExpect.GET("/order").
+					Expect()
+
+				response.Status(httptest.StatusOK)
+				response.Body().Equal(`[]`)
+			},
+		}, {
 			name: "error from usecase level",
 			test: func(t *testing.T, mock *HTTPServerMock) {
 				mock.OrderUC.EXPECT().
