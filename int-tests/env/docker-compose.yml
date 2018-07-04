@@ -1,0 +1,8 @@
+version: '3'
+services:
+  mongo:
+    image: library/mongo:3.4
+    hostname: mongo
+    container_name: mongo
+    ports:
+      - 27019:27017

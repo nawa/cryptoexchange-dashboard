@@ -26,14 +26,14 @@ mockgen:
 	mockgen -source usecase/order.go -package mocks -destination usecase/mocks/order_mock.go
 .PHONY: mockgen
 
-test:
-	@ echo "-> Run tests ..."
+unit-test:
+	@ echo "-> Run unit tests ..."
 
-	go test ./...
-.PHONY: test
+	go test -v ./...
+.PHONY: unit-test
 
-test-coverage:
-	@ echo "-> Running tests with coverage ..."
+unit-test-coverage:
+	@ echo "-> Running unit tests with coverage ..."
 	@rm -rf $(COVERAGE_DIR)
 	@mkdir -p $(COVERAGE_DIR)
 
@@ -45,7 +45,39 @@ test-coverage:
 
 	@go tool cover -func=$(COVERAGE_DIR)/coverage-total.out | tail -n 1 | xargs -I {} echo "TOTAL COVERAGE. "{}
 
-.PHONY: coverage-gen
+.PHONY: unit-test-coverage
+
+test:
+	@ echo "-> Run all tests ..."
+
+	docker-compose --file $(WORKDIR)/int-tests/env/docker-compose.yml down; \
+    	docker-compose --file $(WORKDIR)/int-tests/env/docker-compose.yml up -d; \
+		DB_TEST_URL=localhost:27019/crexd-test go test -v -tags=integration_test ./...; \
+		status=$$?; \
+		docker-compose --file $(WORKDIR)/int-tests/env/docker-compose.yml down; \
+		exit $$status
+
+.PHONY: test
+
+test-coverage:
+	@ echo "-> Running all tests with coverage ..."
+	@rm -rf $(COVERAGE_DIR)
+	@mkdir -p $(COVERAGE_DIR)
+
+	@go list ./... | grep -v "/testdata" | grep -v "/mocks" | xargs -I {} mkdir -p $(COVERAGE_DIR)/{}
+
+	docker-compose --file $(WORKDIR)/int-tests/env/docker-compose.yml down; \
+        	docker-compose --file $(WORKDIR)/int-tests/env/docker-compose.yml up -d; \
+        	export DB_TEST_URL=localhost:27019/crexd-test; \
+    		go list ./... | grep -v "/testdata" | grep -v "/mocks" | xargs -I {} go test -v -tags=integration_test -coverprofile $(COVERAGE_DIR)/{}/cover.out $(GOTEST_PARAM) {}; \
+    		status=$$?; \
+    		docker-compose --file $(WORKDIR)/int-tests/env/docker-compose.yml down; \
+    		echo "mode: set" > $(COVERAGE_DIR)/coverage-total.out; \
+    		go list ./... | grep -v "/testdata" | grep -v "/mocks" | xargs -I {} cat $(COVERAGE_DIR)/{}/cover.out {} 2>/dev/null | grep -v "mode: set" >> $(COVERAGE_DIR)/coverage-total.out; \
+    		go tool cover -func=$(COVERAGE_DIR)/coverage-total.out | tail -n 1 | xargs -I {} echo "TOTAL COVERAGE. "{}; \
+    		exit $$status
+
+.PHONY: test-coverage
 
 coverage-open:
 	@ echo "-> Opening coverage report ..."
