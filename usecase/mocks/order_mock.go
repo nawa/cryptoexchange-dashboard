@@ -5,10 +5,9 @@
 package mocks
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	domain "github.com/nawa/cryptoexchange-dashboard/domain"
+	reflect "reflect"
 )
 
 // MockOrderUsecases is a mock of OrderUsecases interface

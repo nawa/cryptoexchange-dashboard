@@ -2,17 +2,17 @@ package dto
 
 import "github.com/nawa/cryptoexchange-dashboard/domain"
 
-type BalanceDTO map[string][]CurrencyBalanceDTO
+type BalancesResponse map[string][]BalanceDTO //currency/balances for time range
 
-type CurrencyBalanceDTO struct {
+type BalanceDTO struct {
 	Amount     float64 `json:"amount"`
 	BTCAmount  float64 `json:"btc"`
 	USDTAmount float64 `json:"usdt"`
 	Time       int64   `json:"time"`
 }
 
-func NewCurrencyBalanceDTO(model domain.CurrencyBalance) *CurrencyBalanceDTO {
-	return &CurrencyBalanceDTO{
+func NewBalanceDTO(model domain.Balance) *BalanceDTO {
+	return &BalanceDTO{
 		Amount:     model.Amount,
 		BTCAmount:  model.BTCAmount,
 		USDTAmount: model.USDTAmount,
@@ -20,7 +20,7 @@ func NewCurrencyBalanceDTO(model domain.CurrencyBalance) *CurrencyBalanceDTO {
 	}
 }
 
-func (b BalanceDTO) Add(currency string, balance ...CurrencyBalanceDTO) {
+func (b BalancesResponse) Add(currency string, balance ...BalanceDTO) {
 	if len(balance) == 0 {
 		return
 	}

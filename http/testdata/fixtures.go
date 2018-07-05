@@ -6,8 +6,8 @@ import (
 	"github.com/nawa/cryptoexchange-dashboard/domain"
 )
 
-func CurrencyBalances() map[string][]domain.CurrencyBalance {
-	return map[string][]domain.CurrencyBalance{
+func Balances() map[string][]domain.Balance {
+	return map[string][]domain.Balance{
 		"CUR1": {
 			{
 				Currency:   "CUR1",

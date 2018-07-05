@@ -70,14 +70,14 @@ func (s *balanceStorage) Init() (err error) {
 	return
 }
 
-func (s *balanceStorage) Save(balance *domain.Balance) error {
+func (s *balanceStorage) Save(balance ...domain.Balance) error {
 	db, closeSession := s.getDB()
 	defer closeSession()
 
-	return db.C("balance").Insert(convertBalanceFromModel(balance)...)
+	return db.C("balance").Insert(convertBalancesFromModel(balance...)...)
 }
 
-func (s *balanceStorage) FetchHourly(currency string, hours int) ([]domain.CurrencyBalance, error) {
+func (s *balanceStorage) FetchHourly(currency string, hours int) ([]domain.Balance, error) {
 	db, closeSession := s.getDB()
 	defer closeSession()
 
@@ -99,10 +99,10 @@ func (s *balanceStorage) FetchHourly(currency string, hours int) ([]domain.Curre
 		return nil, err
 	}
 
-	return convertBalanceSliceToModel(balances), nil
+	return convertBalancesToModel(balances...), nil
 }
 
-func (s *balanceStorage) FetchWeekly(currency string) ([]domain.CurrencyBalance, error) {
+func (s *balanceStorage) FetchWeekly(currency string) ([]domain.Balance, error) {
 	db, closeSession := s.getDB()
 	defer closeSession()
 
@@ -179,10 +179,10 @@ func (s *balanceStorage) FetchWeekly(currency string) ([]domain.CurrencyBalance,
 		return nil, err
 	}
 
-	return convertBalanceSliceToModel(balances), nil
+	return convertBalancesToModel(balances...), nil
 }
 
-func (s *balanceStorage) FetchMonthly(currency string) ([]domain.CurrencyBalance, error) {
+func (s *balanceStorage) FetchMonthly(currency string) ([]domain.Balance, error) {
 	db, closeSession := s.getDB()
 	defer closeSession()
 
@@ -247,14 +247,14 @@ func (s *balanceStorage) FetchMonthly(currency string) ([]domain.CurrencyBalance
 		return nil, err
 	}
 
-	return convertBalanceSliceToModel(balances), nil
+	return convertBalancesToModel(balances...), nil
 }
 
-func (s *balanceStorage) FetchAll(currency string) ([]domain.CurrencyBalance, error) {
+func (s *balanceStorage) FetchAll(currency string) ([]domain.Balance, error) {
 	panic("not implemented")
 }
 
-func (s *balanceStorage) GetActiveCurrencies() ([]domain.CurrencyBalance, error) {
+func (s *balanceStorage) GetActiveCurrencies() ([]domain.Balance, error) {
 	//TODO make in one call to mongo
 	db, closeSession := s.getDB()
 	defer closeSession()
@@ -292,47 +292,33 @@ func (s *balanceStorage) GetActiveCurrencies() ([]domain.CurrencyBalance, error)
 		return nil, err
 	}
 
-	return convertBalanceSliceToModel(balances), nil
+	return convertBalancesToModel(balances...), nil
 }
 
-func convertBalanceFromModel(b *domain.Balance) (result []interface{}) {
-	result = append(result, balance{
-		Exchange:   string(b.Exchange),
-		Currency:   "total",
-		Amount:     b.BTCAmount,
-		BTCAmount:  b.BTCAmount,
-		USDTAmount: b.USDTAmount,
-		Time:       b.Time,
-	})
-
-	for _, c := range b.Currencies {
+func convertBalancesFromModel(balances ...domain.Balance) (result []interface{}) {
+	for _, b := range balances {
 		result = append(result, balance{
 			Exchange:   string(b.Exchange),
-			Currency:   c.Currency,
-			Amount:     c.Amount,
-			BTCAmount:  c.BTCAmount,
-			USDTAmount: c.USDTAmount,
-			Time:       c.Time,
+			Currency:   b.Currency,
+			Amount:     b.Amount,
+			BTCAmount:  b.BTCAmount,
+			USDTAmount: b.USDTAmount,
+			Time:       b.Time,
 		})
 	}
 	return result
 }
 
-func convertBalanceToModel(b *balance) *domain.CurrencyBalance {
-	return &domain.CurrencyBalance{
-		Currency:   b.Currency,
-		Amount:     b.Amount,
-		BTCAmount:  b.BTCAmount,
-		USDTAmount: b.USDTAmount,
-		Time:       b.Time,
+func convertBalancesToModel(balances ...balance) (result []domain.Balance) {
+	for _, b := range balances {
+		result = append(result, domain.Balance{
+			Exchange:   domain.ExchangeType(b.Exchange),
+			Currency:   b.Currency,
+			Amount:     b.Amount,
+			BTCAmount:  b.BTCAmount,
+			USDTAmount: b.USDTAmount,
+			Time:       b.Time,
+		})
 	}
-}
-
-func convertBalanceSliceToModel(balances []balance) []domain.CurrencyBalance {
-	res := make([]domain.CurrencyBalance, len(balances))
-	for i, b := range balances {
-		res[i] = *convertBalanceToModel(&b)
-	}
-
-	return res
+	return result
 }

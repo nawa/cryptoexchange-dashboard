@@ -6,54 +6,36 @@ import (
 	"github.com/nawa/cryptoexchange-dashboard/domain"
 )
 
-func CurrencyBalances() []domain.CurrencyBalance {
-	return []domain.CurrencyBalance{
+func Balances() []domain.Balance {
+	return []domain.Balance{
 		{
-			Amount:     1,
-			BTCAmount:  1,
-			Currency:   "total",
+			Exchange:   domain.ExchangeTypeBittrex,
+			Currency:   "CUR1",
+			Amount:     100,
+			BTCAmount:  200,
+			USDTAmount: 300,
 			Time:       time.Unix(0, 0).UTC(),
-			USDTAmount: 2,
-		},
-		{
-			Amount:     10,
-			BTCAmount:  9,
-			Currency:   "CUR",
+		}, {
+			Exchange:   domain.ExchangeTypeBittrex,
+			Currency:   "CUR2",
+			Amount:     400,
+			BTCAmount:  500,
+			USDTAmount: 600,
 			Time:       time.Unix(0, 0).UTC().Add(time.Hour),
-			USDTAmount: 7,
 		},
 	}
 }
 
-func ModelBalance() *domain.Balance {
-	return &domain.Balance{
-		Currencies: []domain.CurrencyBalance{CurrencyBalances()[1]},
+func BalancesWithTotal() []domain.Balance {
+	return append(Balances(), domain.Balance{
 		Exchange:   domain.ExchangeTypeBittrex,
-		BTCAmount:  1,
-		USDTAmount: 2,
-		Time:       time.Unix(0, 0).UTC(),
-	}
+		Currency:   "total",
+		Amount:     0,
+		BTCAmount:  700,
+		USDTAmount: 900,
+		Time:       Balances()[0].Time,
+	})
 }
-
-//func StorageBalances() []storage.Balance {
-//	modelBalance := ModelBalance()
-//	return []storage.Balance{
-//		{
-//			Amount:     modelBalance.BTCAmount,
-//			BTCAmount:  modelBalance.BTCAmount,
-//			Currency:   "total",
-//			Exchange:   string(modelBalance.Exchange),
-//			Time:       modelBalance.Time,
-//			USDTAmount: modelBalance.USDTAmount,
-//		}, {
-//			Amount:     modelBalance.Currencies[0].Amount,
-//			BTCAmount:  modelBalance.Currencies[0].BTCAmount,
-//			Currency:   modelBalance.Currencies[0].Currency,
-//			Exchange:   string(modelBalance.Exchange),
-//			Time:       modelBalance.Currencies[0].Time,
-//			USDTAmount: modelBalance.Currencies[0].USDTAmount,
-//		}}
-//}
 
 func Orders() []domain.Order {
 	return []domain.Order{

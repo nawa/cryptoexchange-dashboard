@@ -67,33 +67,29 @@ func BittrexBalances() []bittrex.Balance {
 	}
 }
 
-func ModelBalance() *domain.Balance {
-	currencyBalances := []domain.CurrencyBalance{
+func ModelBalances() []domain.Balance {
+	return []domain.Balance{
 		{
+			Exchange:   domain.ExchangeTypeBittrex,
 			Amount:     1000,
 			BTCAmount:  1000,
 			Currency:   "BTC",
 			USDTAmount: utils.DecimalToFloatQuiet(decimal.NewFromFloat(1000).Mul(decimal.NewFromFloat(1).Div(usdtMarketSummary.Last))),
 		},
 		{
+			Exchange:   domain.ExchangeTypeBittrex,
 			Amount:     2000,
 			BTCAmount:  20000,
 			Currency:   "CUR1",
 			USDTAmount: utils.DecimalToFloatQuiet(decimal.NewFromFloat(20000).Mul(decimal.NewFromFloat(1).Div(usdtMarketSummary.Last))),
 		},
 		{
+			Exchange:   domain.ExchangeTypeBittrex,
 			Amount:     3000,
 			BTCAmount:  120000,
 			Currency:   "CUR2",
 			USDTAmount: utils.DecimalToFloatQuiet(decimal.NewFromFloat(120000).Mul(decimal.NewFromFloat(1).Div(usdtMarketSummary.Last))),
 		},
-	}
-
-	return &domain.Balance{
-		Currencies: currencyBalances,
-		Exchange:   domain.ExchangeTypeBittrex,
-		BTCAmount:  currencyBalances[0].BTCAmount + currencyBalances[1].BTCAmount + currencyBalances[2].BTCAmount,
-		USDTAmount: currencyBalances[0].USDTAmount + currencyBalances[1].USDTAmount + currencyBalances[2].USDTAmount,
 	}
 }
 

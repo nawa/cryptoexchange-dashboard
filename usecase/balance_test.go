@@ -27,12 +27,12 @@ func TestBalanceUsecases_StartSyncFromExchangePeriodically(t *testing.T) {
 	exchange := mocks.NewMockExchange(ctrl)
 
 	exchange.EXPECT().GetBalance().
-		Return(testdata.ModelBalance(), nil).
+		Return(testdata.Balances(), nil).
 		MinTimes(10).
 		MaxTimes(20)
 
 	balanceStorage.EXPECT().
-		Save(testdata.ModelBalance()).
+		Save(testdata.BalancesWithTotal()).
 		Return(nil).
 		MinTimes(10).
 		MaxTimes(20)
@@ -69,11 +69,11 @@ func TestBalanceUsecases_SyncFromExchange(t *testing.T) {
 				exchange := mocks.NewMockExchange(ctrl)
 
 				exchange.EXPECT().GetBalance().
-					Return(testdata.ModelBalance(), nil).
+					Return(testdata.Balances(), nil).
 					Times(1)
 
 				balanceStorage.EXPECT().
-					Save(testdata.ModelBalance()).
+					Save(testdata.BalancesWithTotal()).
 					Return(nil).
 					Times(1)
 
@@ -110,11 +110,11 @@ func TestBalanceUsecases_SyncFromExchange(t *testing.T) {
 				exchange := mocks.NewMockExchange(ctrl)
 
 				exchange.EXPECT().GetBalance().
-					Return(testdata.ModelBalance(), nil).
+					Return(testdata.Balances(), nil).
 					Times(1)
 
 				balanceStorage.EXPECT().
-					Save(testdata.ModelBalance()).
+					Save(testdata.BalancesWithTotal()).
 					Return(errExpected).
 					Times(1)
 
@@ -133,11 +133,11 @@ func TestBalanceUsecases_SyncFromExchange(t *testing.T) {
 				exchange := mocks.NewMockExchange(ctrl)
 
 				exchange.EXPECT().GetBalance().
-					Return(testdata.ModelBalance(), nil).
+					Return(testdata.Balances(), nil).
 					Times(1)
 
 				balanceStorage.EXPECT().
-					Save(testdata.ModelBalance()).
+					Save(testdata.BalancesWithTotal()).
 					Return(nil).
 					Times(1)
 
@@ -192,7 +192,7 @@ func TestBalanceUsecases_FetchHourly(t *testing.T) {
 		name         string
 		fieldsF      func(ctrl *gomock.Controller, args args) fields
 		args         args
-		wantBalances []domain.CurrencyBalance
+		wantBalances []domain.Balance
 		wantErr      bool
 	}{
 		{
@@ -203,7 +203,7 @@ func TestBalanceUsecases_FetchHourly(t *testing.T) {
 
 				balanceStorage.EXPECT().
 					FetchHourly(args.currency, args.hours).
-					Return(testdata.CurrencyBalances(), nil).
+					Return(testdata.Balances(), nil).
 					Times(1)
 
 				return fields{
@@ -216,7 +216,7 @@ func TestBalanceUsecases_FetchHourly(t *testing.T) {
 				currency: "CURS",
 				hours:    2,
 			},
-			wantBalances: testdata.CurrencyBalances(),
+			wantBalances: testdata.Balances(),
 			wantErr:      false,
 		},
 		{
@@ -283,7 +283,7 @@ func TestBalanceUsecases_FetchWeekly(t *testing.T) {
 		name         string
 		fieldsF      func(ctrl *gomock.Controller, args args) fields
 		args         args
-		wantBalances []domain.CurrencyBalance
+		wantBalances []domain.Balance
 		wantErr      bool
 	}{
 		{
@@ -294,7 +294,7 @@ func TestBalanceUsecases_FetchWeekly(t *testing.T) {
 
 				balanceStorage.EXPECT().
 					FetchWeekly(args.currency).
-					Return(testdata.CurrencyBalances(), nil).
+					Return(testdata.Balances(), nil).
 					Times(1)
 
 				return fields{
@@ -304,7 +304,7 @@ func TestBalanceUsecases_FetchWeekly(t *testing.T) {
 				}
 			},
 			args:         args{currency: "CURS"},
-			wantBalances: testdata.CurrencyBalances(),
+			wantBalances: testdata.Balances(),
 			wantErr:      false,
 		},
 		{
@@ -368,7 +368,7 @@ func TestBalanceUsecases_FetchMonthly(t *testing.T) {
 		name         string
 		fieldsF      func(ctrl *gomock.Controller, args args) fields
 		args         args
-		wantBalances []domain.CurrencyBalance
+		wantBalances []domain.Balance
 		wantErr      bool
 	}{
 		{
@@ -379,7 +379,7 @@ func TestBalanceUsecases_FetchMonthly(t *testing.T) {
 
 				balanceStorage.EXPECT().
 					FetchMonthly(args.currency).
-					Return(testdata.CurrencyBalances(), nil).
+					Return(testdata.Balances(), nil).
 					Times(1)
 
 				return fields{
@@ -389,7 +389,7 @@ func TestBalanceUsecases_FetchMonthly(t *testing.T) {
 				}
 			},
 			args:         args{currency: "CURS"},
-			wantBalances: testdata.CurrencyBalances(),
+			wantBalances: testdata.Balances(),
 			wantErr:      false,
 		},
 		{
@@ -453,7 +453,7 @@ func TestBalanceUsecases_FetchAll(t *testing.T) {
 		name         string
 		fieldsF      func(ctrl *gomock.Controller, args args) fields
 		args         args
-		wantBalances []domain.CurrencyBalance
+		wantBalances []domain.Balance
 		wantErr      bool
 	}{
 		{
@@ -464,7 +464,7 @@ func TestBalanceUsecases_FetchAll(t *testing.T) {
 
 				balanceStorage.EXPECT().
 					FetchAll(args.currency).
-					Return(testdata.CurrencyBalances(), nil).
+					Return(testdata.Balances(), nil).
 					Times(1)
 
 				return fields{
@@ -474,7 +474,7 @@ func TestBalanceUsecases_FetchAll(t *testing.T) {
 				}
 			},
 			args:         args{currency: "CURS"},
-			wantBalances: testdata.CurrencyBalances(),
+			wantBalances: testdata.Balances(),
 			wantErr:      false,
 		},
 		{
@@ -534,7 +534,7 @@ func TestBalanceUsecases_GetActiveCurrencies(t *testing.T) {
 	tests := []struct {
 		name         string
 		fieldsF      func(ctrl *gomock.Controller) fields
-		wantBalances []domain.CurrencyBalance
+		wantBalances []domain.Balance
 		wantErr      bool
 	}{
 		{
@@ -545,7 +545,7 @@ func TestBalanceUsecases_GetActiveCurrencies(t *testing.T) {
 
 				balanceStorage.EXPECT().
 					GetActiveCurrencies().
-					Return(testdata.CurrencyBalances(), nil).
+					Return(testdata.Balances(), nil).
 					Times(1)
 
 				return fields{
@@ -554,7 +554,7 @@ func TestBalanceUsecases_GetActiveCurrencies(t *testing.T) {
 					log:            utils.NewDevNullLog(),
 				}
 			},
-			wantBalances: testdata.CurrencyBalances(),
+			wantBalances: testdata.Balances(),
 			wantErr:      false,
 		}, {
 			name: "error in storageBalance",

@@ -10,17 +10,10 @@ const (
 	ExchangeTypeBittrex = ExchangeType("bittrex")
 )
 
-type CurrencyBalance struct {
+type Balance struct {
+	Exchange   ExchangeType
 	Currency   string
 	Amount     float64
-	BTCAmount  float64
-	USDTAmount float64
-	Time       time.Time
-}
-
-type Balance struct {
-	Currencies []CurrencyBalance
-	Exchange   ExchangeType
 	BTCAmount  float64
 	USDTAmount float64
 	Time       time.Time

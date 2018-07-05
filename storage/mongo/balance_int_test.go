@@ -10,7 +10,7 @@ import (
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/nawa/cryptoexchange-dashboard/domain"
+	"github.com/nawa/cryptoexchange-dashboard/storage/mongo/testdata"
 	assert "github.com/stretchr/testify/require"
 
 	"github.com/nawa/cryptoexchange-dashboard/storage"
@@ -74,52 +74,13 @@ func TestBalanceStorage_FetchHourly(t *testing.T) {
 	assert.NoError(t, cleanupData(session))
 
 	now := time.Now()
-	balances := []*domain.Balance{
-		{
-			Currencies: []domain.CurrencyBalance{
-				{
-					Currency:   "CUR1",
-					Amount:     1,
-					BTCAmount:  2,
-					USDTAmount: 3,
-					Time:       now.Add(-5 * time.Hour),
-				},
-				{
-					Currency:   "CUR2",
-					Amount:     4,
-					BTCAmount:  5,
-					USDTAmount: 6,
-					Time:       now,
-				},
-			},
-			Exchange:   domain.ExchangeTypeBittrex,
-			BTCAmount:  100,
-			USDTAmount: 1000,
-			Time:       now,
-		},
-		{
-			Currencies: []domain.CurrencyBalance{
-				{
-					Currency:   "CUR1",
-					Amount:     1,
-					BTCAmount:  2,
-					USDTAmount: 3,
-					Time:       now,
-				},
-				{
-					Currency:   "CUR2",
-					Amount:     4,
-					BTCAmount:  5,
-					USDTAmount: 6,
-					Time:       now.Add(-5 * time.Hour),
-				},
-			},
-			Exchange:   domain.ExchangeTypeBittrex,
-			BTCAmount:  100,
-			USDTAmount: 1000,
-			Time:       now,
-		},
-	}
+	balances := testdata.Balances()
+	balances[0].Time = now.Add(-5 * time.Hour)
+	balances[1].Time = now.Add(-1 * time.Hour)
+	balances[2].Time = now
+	balances[3].Time = now
+	balances[4].Time = now.Add(-5 * time.Hour)
+	balances[5].Time = now.Add(-1 * time.Hour)
 
 	for _, balance := range balances {
 		err := balanceStorage.Save(balance)
@@ -137,6 +98,91 @@ func TestBalanceStorage_FetchHourly(t *testing.T) {
 	storageBalances, err = balanceStorage.FetchHourly("CUR2", 2)
 	assert.NoError(t, err)
 	assert.Len(t, storageBalances, 1)
+}
+
+func TestBalanceStorage_FetchWeekly(t *testing.T) {
+	assert.NoError(t, cleanupData(session))
+
+	now := time.Now()
+	balances := testdata.Balances()
+	balances[0].Time = now.Add(-10 * 24 * time.Hour)
+	balances[1].Time = now.Add(-1 * 24 * time.Hour)
+	balances[2].Time = now
+	balances[3].Time = now
+	balances[4].Time = now.Add(-10 * 24 * time.Hour)
+	balances[5].Time = now.Add(-1 * 24 * time.Hour)
+
+	for _, balance := range balances {
+		err := balanceStorage.Save(balance)
+		assert.NoError(t, err)
+	}
+
+	storageBalances, err := balanceStorage.FetchWeekly("total")
+	assert.NoError(t, err)
+	assert.Len(t, storageBalances, 2)
+
+	storageBalances, err = balanceStorage.FetchWeekly("CUR1")
+	assert.NoError(t, err)
+	assert.Len(t, storageBalances, 1)
+
+	storageBalances, err = balanceStorage.FetchWeekly("CUR2")
+	assert.NoError(t, err)
+	assert.Len(t, storageBalances, 1)
+}
+
+func TestBalanceStorage_FetchMonthly(t *testing.T) {
+	assert.NoError(t, cleanupData(session))
+
+	now := time.Now()
+	balances := testdata.Balances()
+	balances[0].Time = now.Add(-32 * 24 * time.Hour)
+	balances[1].Time = now.Add(-10 * 24 * time.Hour)
+	balances[2].Time = now
+	balances[3].Time = now
+	balances[4].Time = now.Add(-32 * 24 * time.Hour)
+	balances[5].Time = now.Add(-10 * 24 * time.Hour)
+
+	for _, balance := range balances {
+		err := balanceStorage.Save(balance)
+		assert.NoError(t, err)
+	}
+
+	storageBalances, err := balanceStorage.FetchMonthly("total")
+	assert.NoError(t, err)
+	assert.Len(t, storageBalances, 2)
+
+	storageBalances, err = balanceStorage.FetchMonthly("CUR1")
+	assert.NoError(t, err)
+	assert.Len(t, storageBalances, 1)
+
+	storageBalances, err = balanceStorage.FetchMonthly("CUR2")
+	assert.NoError(t, err)
+	assert.Len(t, storageBalances, 1)
+}
+
+func TestBalanceStorage_GetActiveCurrencies(t *testing.T) {
+	assert.NoError(t, cleanupData(session))
+
+	now := time.Now()
+	balances := testdata.Balances()
+	balances[0].Time = now
+	balances[1].Time = now
+	balances[2].Time = now
+	balances[3].Time = now.Add(-10 * 24 * time.Hour)
+	balances[4].Time = now.Add(-10 * 24 * time.Hour)
+	balances[5].Time = now.Add(-10 * 24 * time.Hour)
+
+	for _, balance := range balances {
+		err := balanceStorage.Save(balance)
+		assert.NoError(t, err)
+	}
+
+	storageBalances, err := balanceStorage.GetActiveCurrencies()
+	assert.NoError(t, err)
+	assert.Len(t, storageBalances, 3)
+	assert.Equal(t, now.Truncate(time.Millisecond).UTC(), storageBalances[0].Time.Truncate(time.Millisecond).UTC())
+	assert.Equal(t, now.Truncate(time.Millisecond).UTC(), storageBalances[1].Time.Truncate(time.Millisecond).UTC())
+	assert.Equal(t, now.Truncate(time.Millisecond).UTC(), storageBalances[2].Time.Truncate(time.Millisecond).UTC())
 }
 
 func cleanupData(session *mgo.Session) (err error) {

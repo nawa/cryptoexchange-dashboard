@@ -35,7 +35,7 @@ func NewBittrexExchange(apiKey, apiSecret string) storage.Exchange {
 	}
 }
 
-func (be *bittrexExchange) GetBalance() (*domain.Balance, error) {
+func (be *bittrexExchange) GetBalance() ([]domain.Balance, error) {
 	var (
 		balances  []bittrex.Balance
 		converter *currencyConverter
@@ -61,7 +61,7 @@ func (be *bittrexExchange) GetBalance() (*domain.Balance, error) {
 		return nil, err
 	}
 
-	result := &domain.Balance{}
+	var result []domain.Balance
 	for _, b := range balances {
 		if b.Balance.GreaterThan(decimal.NewFromFloat(0)) {
 			btcBalance, err := converter.ConvertToBTC(b.Currency, b.Balance)
@@ -73,18 +73,14 @@ func (be *bittrexExchange) GetBalance() (*domain.Balance, error) {
 				return nil, err
 			}
 
-			result.Exchange = domain.ExchangeTypeBittrex
-			result.Time = converter.syncTime
-			result.Currencies = append(result.Currencies,
-				domain.CurrencyBalance{
-					Currency:   b.Currency,
-					Amount:     utils.DecimalToFloatQuiet(b.Balance),
-					BTCAmount:  utils.DecimalToFloatQuiet(btcBalance),
-					USDTAmount: utils.DecimalToFloatQuiet(usdtBalance),
-					Time:       converter.syncTime,
-				})
-			result.BTCAmount = result.BTCAmount + utils.DecimalToFloatQuiet(btcBalance)
-			result.USDTAmount = result.USDTAmount + utils.DecimalToFloatQuiet(usdtBalance)
+			result = append(result, domain.Balance{
+				Exchange:   domain.ExchangeTypeBittrex,
+				Currency:   b.Currency,
+				Amount:     utils.DecimalToFloatQuiet(b.Balance),
+				BTCAmount:  utils.DecimalToFloatQuiet(btcBalance),
+				USDTAmount: utils.DecimalToFloatQuiet(usdtBalance),
+				Time:       converter.syncTime,
+			})
 		}
 	}
 	return result, nil
@@ -154,7 +150,7 @@ func (be *bittrexExchange) GetOrders() ([]domain.Order, error) {
 }
 
 func (be *bittrexExchange) convertOrders(bittrexOrders []bittrex.Order, converter *currencyConverter) []domain.Order {
-	orders := []domain.Order{}
+	orders := []domain.Order{} //don't change me
 	for _, order := range bittrexOrders {
 		toFrom := strings.Split(order.Exchange, "-")
 		if len(toFrom) != 2 {

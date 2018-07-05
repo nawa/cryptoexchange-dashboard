@@ -59,7 +59,7 @@ func TestBittrexExchange_GetBalance(t *testing.T) {
 	tests := []struct {
 		name    string
 		fieldsF func() fields
-		want    *domain.Balance
+		want    []domain.Balance
 		wantErr bool
 	}{
 		{
@@ -84,11 +84,11 @@ func TestBittrexExchange_GetBalance(t *testing.T) {
 					log:     utils.NewDevNullLog(),
 				}
 			},
-			want:    testdata.ModelBalance(),
+			want:    testdata.ModelBalances(),
 			wantErr: false,
 		},
 		{
-			name: "error in bittrex 'account/getbalances'",
+			name: "error in bittrex 'account|getbalances'",
 			fieldsF: func() fields {
 				response := testdata.BittrexResponseSuccess(testdata.BittrexMarketSummaries())
 
@@ -110,7 +110,7 @@ func TestBittrexExchange_GetBalance(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "error in bittrex 'public/getmarketsummaries'",
+			name: "error in bittrex 'public|getmarketsummaries'",
 			fieldsF: func() fields {
 				gock.New("https://bittrex.com").
 					Get("api/v1.1/public/getmarketsummaries").
@@ -193,18 +193,17 @@ func TestBittrexExchange_GetBalance(t *testing.T) {
 				}
 				return
 			}
-			if !modelBalancesEqual(*got, *tt.want) {
+			if !modelBalancesEqual(got, tt.want) {
 				t.Errorf("bittrexExchange.GetBalance() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func modelBalancesEqual(got domain.Balance, want domain.Balance) bool {
+func modelBalancesEqual(got []domain.Balance, want []domain.Balance) bool {
 	var zeroTime time.Time
-	got.Time = zeroTime
-	for i := range got.Currencies {
-		got.Currencies[i].Time = zeroTime
+	for i := range got {
+		got[i].Time = zeroTime
 	}
 	return reflect.DeepEqual(got, want)
 }
@@ -243,7 +242,7 @@ func TestBittrexExchange_GetMarketInfo(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "error in bittrex 'public/getmarketsummary'",
+			name: "error in bittrex 'public|getmarketsummary'",
 			fieldsF: func() fields {
 
 				gock.New("https://bittrex.com").
@@ -335,7 +334,7 @@ func TestBittrexExchange_GetOrders(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "correct if bittrex `account/getorderhistory` returns empty list of orders",
+			name: "correct if bittrex `account|getorderhistory` returns empty list of orders",
 			fieldsF: func() fields {
 				response := testdata.BittrexResponseSuccess(testdata.BittrexMarketSummaries())
 
@@ -360,7 +359,7 @@ func TestBittrexExchange_GetOrders(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "error in bittrex 'public/getmarketsummaries'",
+			name: "error in bittrex 'public|getmarketsummaries'",
 			fieldsF: func() fields {
 				gock.New("https://bittrex.com").
 					Get("api/v1.1/public/getmarketsummaries").

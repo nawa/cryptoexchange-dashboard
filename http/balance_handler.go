@@ -39,12 +39,12 @@ func (h *BalanceHandler) Hourly(ctx iris.Context) {
 		return
 	}
 
-	var curBalancesDTO []dto.CurrencyBalanceDTO
+	var curBalancesDTO []dto.BalanceDTO
 	for _, b := range mBalances {
-		curBalancesDTO = append(curBalancesDTO, *dto.NewCurrencyBalanceDTO(b))
+		curBalancesDTO = append(curBalancesDTO, *dto.NewBalanceDTO(b))
 	}
 
-	balanceDTO := dto.BalanceDTO{}
+	balanceDTO := dto.BalancesResponse{}
 	balanceDTO.Add(currency, curBalancesDTO...)
 
 	_, err = ctx.JSON(balanceDTO)
@@ -66,12 +66,12 @@ func (h *BalanceHandler) Weekly(ctx iris.Context) {
 		return
 	}
 
-	var curBalancesDTO []dto.CurrencyBalanceDTO
+	var curBalancesDTO []dto.BalanceDTO
 	for _, b := range mBalances {
-		curBalancesDTO = append(curBalancesDTO, *dto.NewCurrencyBalanceDTO(b))
+		curBalancesDTO = append(curBalancesDTO, *dto.NewBalanceDTO(b))
 	}
 
-	balanceDTO := dto.BalanceDTO{}
+	balanceDTO := dto.BalancesResponse{}
 	balanceDTO.Add(currency, curBalancesDTO...)
 
 	_, err = ctx.JSON(balanceDTO)
@@ -93,12 +93,12 @@ func (h *BalanceHandler) Monthly(ctx iris.Context) {
 		return
 	}
 
-	var curBalancesDTO []dto.CurrencyBalanceDTO
+	var curBalancesDTO []dto.BalanceDTO
 	for _, b := range mBalances {
-		curBalancesDTO = append(curBalancesDTO, *dto.NewCurrencyBalanceDTO(b))
+		curBalancesDTO = append(curBalancesDTO, *dto.NewBalanceDTO(b))
 	}
 
-	balanceDTO := dto.BalanceDTO{}
+	balanceDTO := dto.BalancesResponse{}
 	balanceDTO.Add(currency, curBalancesDTO...)
 
 	_, err = ctx.JSON(balanceDTO)
@@ -120,12 +120,12 @@ func (h *BalanceHandler) All(ctx iris.Context) {
 		return
 	}
 
-	var curBalancesDTO []dto.CurrencyBalanceDTO
+	var curBalancesDTO []dto.BalanceDTO
 	for _, b := range mBalances {
-		curBalancesDTO = append(curBalancesDTO, *dto.NewCurrencyBalanceDTO(b))
+		curBalancesDTO = append(curBalancesDTO, *dto.NewBalanceDTO(b))
 	}
 
-	balanceDTO := dto.BalanceDTO{}
+	balanceDTO := dto.BalancesResponse{}
 	balanceDTO.Add(currency, curBalancesDTO...)
 
 	_, err = ctx.JSON(balanceDTO)
@@ -141,9 +141,9 @@ func (h *BalanceHandler) ActiveCurrencies(ctx iris.Context) {
 		return
 	}
 
-	balanceDTO := dto.BalanceDTO{}
+	balanceDTO := dto.BalancesResponse{}
 	for _, b := range mBalances {
-		balanceDTO.Add(b.Currency, *dto.NewCurrencyBalanceDTO(b))
+		balanceDTO.Add(b.Currency, *dto.NewBalanceDTO(b))
 	}
 	_, err = ctx.JSON(balanceDTO)
 	if err != nil {

@@ -61,9 +61,9 @@ func (mr *MockBalanceUsecasesMockRecorder) SyncFromExchange() *gomock.Call {
 }
 
 // FetchHourly mocks base method
-func (m *MockBalanceUsecases) FetchHourly(currency string, hours int) ([]domain.CurrencyBalance, error) {
+func (m *MockBalanceUsecases) FetchHourly(currency string, hours int) ([]domain.Balance, error) {
 	ret := m.ctrl.Call(m, "FetchHourly", currency, hours)
-	ret0, _ := ret[0].([]domain.CurrencyBalance)
+	ret0, _ := ret[0].([]domain.Balance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -74,9 +74,9 @@ func (mr *MockBalanceUsecasesMockRecorder) FetchHourly(currency, hours interface
 }
 
 // FetchWeekly mocks base method
-func (m *MockBalanceUsecases) FetchWeekly(currency string) ([]domain.CurrencyBalance, error) {
+func (m *MockBalanceUsecases) FetchWeekly(currency string) ([]domain.Balance, error) {
 	ret := m.ctrl.Call(m, "FetchWeekly", currency)
-	ret0, _ := ret[0].([]domain.CurrencyBalance)
+	ret0, _ := ret[0].([]domain.Balance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -87,9 +87,9 @@ func (mr *MockBalanceUsecasesMockRecorder) FetchWeekly(currency interface{}) *go
 }
 
 // FetchMonthly mocks base method
-func (m *MockBalanceUsecases) FetchMonthly(currency string) ([]domain.CurrencyBalance, error) {
+func (m *MockBalanceUsecases) FetchMonthly(currency string) ([]domain.Balance, error) {
 	ret := m.ctrl.Call(m, "FetchMonthly", currency)
-	ret0, _ := ret[0].([]domain.CurrencyBalance)
+	ret0, _ := ret[0].([]domain.Balance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -100,9 +100,9 @@ func (mr *MockBalanceUsecasesMockRecorder) FetchMonthly(currency interface{}) *g
 }
 
 // FetchAll mocks base method
-func (m *MockBalanceUsecases) FetchAll(currency string) ([]domain.CurrencyBalance, error) {
+func (m *MockBalanceUsecases) FetchAll(currency string) ([]domain.Balance, error) {
 	ret := m.ctrl.Call(m, "FetchAll", currency)
-	ret0, _ := ret[0].([]domain.CurrencyBalance)
+	ret0, _ := ret[0].([]domain.Balance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -113,9 +113,9 @@ func (mr *MockBalanceUsecasesMockRecorder) FetchAll(currency interface{}) *gomoc
 }
 
 // GetActiveCurrencies mocks base method
-func (m *MockBalanceUsecases) GetActiveCurrencies() ([]domain.CurrencyBalance, error) {
+func (m *MockBalanceUsecases) GetActiveCurrencies() ([]domain.Balance, error) {
 	ret := m.ctrl.Call(m, "GetActiveCurrencies")
-	ret0, _ := ret[0].([]domain.CurrencyBalance)
+	ret0, _ := ret[0].([]domain.Balance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

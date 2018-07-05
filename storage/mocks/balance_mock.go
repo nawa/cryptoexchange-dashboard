@@ -47,21 +47,25 @@ func (mr *MockBalanceStorageMockRecorder) Init() *gomock.Call {
 }
 
 // Save mocks base method
-func (m *MockBalanceStorage) Save(arg0 *domain.Balance) error {
-	ret := m.ctrl.Call(m, "Save", arg0)
+func (m *MockBalanceStorage) Save(balance ...domain.Balance) error {
+	varargs := []interface{}{}
+	for _, a := range balance {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Save", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Save indicates an expected call of Save
-func (mr *MockBalanceStorageMockRecorder) Save(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockBalanceStorage)(nil).Save), arg0)
+func (mr *MockBalanceStorageMockRecorder) Save(balance ...interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockBalanceStorage)(nil).Save), balance...)
 }
 
 // FetchHourly mocks base method
-func (m *MockBalanceStorage) FetchHourly(currency string, hours int) ([]domain.CurrencyBalance, error) {
+func (m *MockBalanceStorage) FetchHourly(currency string, hours int) ([]domain.Balance, error) {
 	ret := m.ctrl.Call(m, "FetchHourly", currency, hours)
-	ret0, _ := ret[0].([]domain.CurrencyBalance)
+	ret0, _ := ret[0].([]domain.Balance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -72,9 +76,9 @@ func (mr *MockBalanceStorageMockRecorder) FetchHourly(currency, hours interface{
 }
 
 // FetchWeekly mocks base method
-func (m *MockBalanceStorage) FetchWeekly(currency string) ([]domain.CurrencyBalance, error) {
+func (m *MockBalanceStorage) FetchWeekly(currency string) ([]domain.Balance, error) {
 	ret := m.ctrl.Call(m, "FetchWeekly", currency)
-	ret0, _ := ret[0].([]domain.CurrencyBalance)
+	ret0, _ := ret[0].([]domain.Balance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -85,9 +89,9 @@ func (mr *MockBalanceStorageMockRecorder) FetchWeekly(currency interface{}) *gom
 }
 
 // FetchMonthly mocks base method
-func (m *MockBalanceStorage) FetchMonthly(currency string) ([]domain.CurrencyBalance, error) {
+func (m *MockBalanceStorage) FetchMonthly(currency string) ([]domain.Balance, error) {
 	ret := m.ctrl.Call(m, "FetchMonthly", currency)
-	ret0, _ := ret[0].([]domain.CurrencyBalance)
+	ret0, _ := ret[0].([]domain.Balance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -98,9 +102,9 @@ func (mr *MockBalanceStorageMockRecorder) FetchMonthly(currency interface{}) *go
 }
 
 // FetchAll mocks base method
-func (m *MockBalanceStorage) FetchAll(currency string) ([]domain.CurrencyBalance, error) {
+func (m *MockBalanceStorage) FetchAll(currency string) ([]domain.Balance, error) {
 	ret := m.ctrl.Call(m, "FetchAll", currency)
-	ret0, _ := ret[0].([]domain.CurrencyBalance)
+	ret0, _ := ret[0].([]domain.Balance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -111,9 +115,9 @@ func (mr *MockBalanceStorageMockRecorder) FetchAll(currency interface{}) *gomock
 }
 
 // GetActiveCurrencies mocks base method
-func (m *MockBalanceStorage) GetActiveCurrencies() ([]domain.CurrencyBalance, error) {
+func (m *MockBalanceStorage) GetActiveCurrencies() ([]domain.Balance, error) {
 	ret := m.ctrl.Call(m, "GetActiveCurrencies")
-	ret0, _ := ret[0].([]domain.CurrencyBalance)
+	ret0, _ := ret[0].([]domain.Balance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

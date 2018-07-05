@@ -35,9 +35,9 @@ func (m *MockExchange) EXPECT() *MockExchangeMockRecorder {
 }
 
 // GetBalance mocks base method
-func (m *MockExchange) GetBalance() (*domain.Balance, error) {
+func (m *MockExchange) GetBalance() ([]domain.Balance, error) {
 	ret := m.ctrl.Call(m, "GetBalance")
-	ret0, _ := ret[0].(*domain.Balance)
+	ret0, _ := ret[0].([]domain.Balance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

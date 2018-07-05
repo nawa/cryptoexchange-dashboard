@@ -16,15 +16,15 @@ type BalanceUsecases interface {
 	StartSyncFromExchangePeriodically(period time.Duration) (stop func(), err error)
 	SyncFromExchange() error
 	// All records from the last N hours
-	FetchHourly(currency string, hours int) ([]domain.CurrencyBalance, error)
+	FetchHourly(currency string, hours int) ([]domain.Balance, error)
 	// Records from the last week with 5 min interval
-	FetchWeekly(currency string) ([]domain.CurrencyBalance, error)
+	FetchWeekly(currency string) ([]domain.Balance, error)
 	// Records from the last month with 1 hour interval
-	FetchMonthly(currency string) ([]domain.CurrencyBalance, error)
+	FetchMonthly(currency string) ([]domain.Balance, error)
 	//TODO // All records with 1 day???  interval
-	FetchAll(currency string) ([]domain.CurrencyBalance, error)
+	FetchAll(currency string) ([]domain.Balance, error)
 	// Get currency balances > 0
-	GetActiveCurrencies() ([]domain.CurrencyBalance, error)
+	GetActiveCurrencies() ([]domain.Balance, error)
 }
 
 type balanceUsecases struct {
@@ -55,30 +55,48 @@ func (u *balanceUsecases) StartSyncFromExchangePeriodically(period time.Duration
 }
 
 func (u *balanceUsecases) SyncFromExchange() error {
-	balance, err := u.exchange.GetBalance()
+	balances, err := u.exchange.GetBalance()
 	if err != nil {
 		u.log.WithField("method", "SyncFromExchange").WithError(err).Error()
 		return err
 	}
 
-	err = u.balanceStorage.Save(balance)
+	if len(balances) == 0 {
+		return nil
+	}
+
+	total := domain.Balance{
+		Currency: "total",
+		//TODO fix me for multiple exchanges
+		Exchange: balances[0].Exchange,
+		Time:     balances[0].Time,
+	}
+
+	for _, b := range balances {
+		total.BTCAmount += b.BTCAmount
+		total.USDTAmount += b.USDTAmount
+	}
+
+	balances = append(balances, total)
+
+	err = u.balanceStorage.Save(balances...)
 	if err != nil {
 		u.log.WithField("method", "SyncFromExchange").WithError(err).Error()
 		return err
 	}
 
 	if u.log.Level >= logrus.DebugLevel {
-		jsonBalance, err := json.MarshalIndent(balance, "", "  ")
+		jsonBalances, err := json.MarshalIndent(balances, "", "  ")
 		if err != nil {
 			u.log.WithField("method", "SyncFromExchange").WithError(err).Error()
 			return err
 		}
-		u.log.WithField("balance", string(jsonBalance)).Debug("current balance")
+		u.log.WithField("balance", string(jsonBalances)).Debug("current balance")
 	}
 	return nil
 }
 
-func (u *balanceUsecases) FetchHourly(currency string, hours int) ([]domain.CurrencyBalance, error) {
+func (u *balanceUsecases) FetchHourly(currency string, hours int) ([]domain.Balance, error) {
 	balances, err := u.balanceStorage.FetchHourly(currency, hours)
 	if err != nil {
 		u.log.WithField("method", "FetchHourly").WithError(err).Error()
@@ -88,7 +106,7 @@ func (u *balanceUsecases) FetchHourly(currency string, hours int) ([]domain.Curr
 	return balances, nil
 }
 
-func (u *balanceUsecases) FetchWeekly(currency string) ([]domain.CurrencyBalance, error) {
+func (u *balanceUsecases) FetchWeekly(currency string) ([]domain.Balance, error) {
 	balances, err := u.balanceStorage.FetchWeekly(currency)
 	if err != nil {
 		u.log.WithField("method", "FetchWeekly").WithError(err).Error()
@@ -98,7 +116,7 @@ func (u *balanceUsecases) FetchWeekly(currency string) ([]domain.CurrencyBalance
 	return balances, nil
 }
 
-func (u *balanceUsecases) FetchMonthly(currency string) ([]domain.CurrencyBalance, error) {
+func (u *balanceUsecases) FetchMonthly(currency string) ([]domain.Balance, error) {
 	balances, err := u.balanceStorage.FetchMonthly(currency)
 	if err != nil {
 		u.log.WithField("method", "FetchMonthly").WithError(err).Error()
@@ -108,7 +126,7 @@ func (u *balanceUsecases) FetchMonthly(currency string) ([]domain.CurrencyBalanc
 	return balances, nil
 }
 
-func (u *balanceUsecases) FetchAll(currency string) ([]domain.CurrencyBalance, error) {
+func (u *balanceUsecases) FetchAll(currency string) ([]domain.Balance, error) {
 	balances, err := u.balanceStorage.FetchAll(currency)
 	if err != nil {
 		u.log.WithField("method", "FetchAll").WithError(err).Error()
@@ -118,7 +136,7 @@ func (u *balanceUsecases) FetchAll(currency string) ([]domain.CurrencyBalance, e
 	return balances, nil
 }
 
-func (u *balanceUsecases) GetActiveCurrencies() ([]domain.CurrencyBalance, error) {
+func (u *balanceUsecases) GetActiveCurrencies() ([]domain.Balance, error) {
 	balances, err := u.balanceStorage.GetActiveCurrencies()
 	if err != nil {
 		u.log.WithField("method", "GetActiveCurrencies").WithError(err).Error()
