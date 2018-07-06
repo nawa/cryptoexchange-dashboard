@@ -23,12 +23,12 @@ func NewOrderUsecase(exchange storage.Exchange) OrderUsecases {
 	}
 }
 
-func (u *orderUsecases) GetActiveOrders() (orders []domain.Order, err error) {
-	orders, err = u.exchange.GetOrders()
+func (u *orderUsecases) GetActiveOrders() ([]domain.Order, error) {
+	orders, err := u.exchange.GetOrders()
 	if err != nil {
 		u.log.WithField("method", "GetActiveOrders").WithError(err).Error()
-		return
+		return nil, err
 	}
 
-	return
+	return orders, nil
 }

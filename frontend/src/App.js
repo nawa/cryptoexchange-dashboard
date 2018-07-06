@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import ExchangeChart from './ExchangeChart'; 
 import {Table, Navbar, NavbarBrand, Nav, NavItem, NavLink, TabPane, TabContent} from 'reactstrap';
 import classnames from 'classnames';
-import config from "./config.json";
+import config from "./config.js";
 import { BeatLoader } from 'halogenium';
 import moment from 'moment';
 
@@ -39,7 +39,7 @@ class App extends Component {
   }
 
   fetchActiveCurrencies() {
-    return fetch(config.backend + "/balance/active", {
+    return fetch(config.api.url + "/balance/active", {
       method: 'GET'
     })
       .then((response) => response.json())
@@ -54,7 +54,7 @@ class App extends Component {
   }
 
   fetchOrders() {
-    return fetch(config.backend + "/order", {
+    return fetch(config.api.url + "/order", {
       method: 'GET'
     })
       .then((response) => response.json())

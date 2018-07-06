@@ -185,10 +185,10 @@ func TestBalanceStorage_GetActiveCurrencies(t *testing.T) {
 	assert.Equal(t, now.Truncate(time.Millisecond).UTC(), storageBalances[2].Time.Truncate(time.Millisecond).UTC())
 }
 
-func cleanupData(session *mgo.Session) (err error) {
-	_, err = session.DB("").
+func cleanupData(session *mgo.Session) error {
+	_, err := session.DB("").
 		C("balance").
 		RemoveAll(bson.M{})
 
-	return
+	return err
 }

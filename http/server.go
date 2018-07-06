@@ -4,12 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/nawa/cryptoexchange-dashboard/usecase"
-
 	"github.com/Sirupsen/logrus"
 	"github.com/iris-contrib/middleware/cors"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/middleware/recover"
+	"github.com/nawa/cryptoexchange-dashboard/usecase"
 )
 
 type Server struct {
@@ -22,12 +21,7 @@ type Server struct {
 func NewServer(balanceUsecase usecase.BalanceUsecases, orderUsecase usecase.OrderUsecases) *Server {
 	app := iris.New()
 	app.Use(recover.New())
-
-	crs := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000"},
-		AllowCredentials: true,
-	})
-	app.Use(crs)
+	app.Use(cors.Default())
 
 	baseHandler := NewBaseHandler()
 	balanceHandler := NewBalanceHandler(balanceUsecase)

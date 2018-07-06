@@ -1,17 +1,6 @@
 version: '3'
 
 services:
-  sync:
-    hostname: sync
-    image: ${CREXD_IMAGENAME_ARMHF}
-    restart: ${CREXD_RESTART_POLICY}
-    environment:
-      - EXCHANGE_API_KEY
-      - EXCHANGE_API_SECRET
-      - CREXD_ARGS=sync --period=$CREXD_SYNC_PERIOD --db-url=mongodb://mongo:27017/$CREXD_MONGO_DBNAME
-    links:
-      - mongo
-  
   mongo:
     image: sumglobal/rpi-mongodb
     ports:
@@ -19,3 +8,38 @@ services:
     volumes: 
       - ${CREXD_MONGO_VOLUME_DB}:/data/db
       - ${CREXD_MONGO_VOLUME_CONFIG}:/data/configdb
+
+  sync:
+      hostname: sync
+      image: ${CREXD_IMAGENAME_ARMHF}
+      restart: ${CREXD_RESTART_POLICY}
+      environment:
+        - EXCHANGE_API_KEY
+        - EXCHANGE_API_SECRET
+        - CREXD_ARGS=sync --period=$CREXD_SYNC_PERIOD --db-url=mongodb://mongo:27017/$CREXD_MONGO_DBNAME --debug
+      links:
+        - mongo
+
+  api:
+    hostname: api
+    image: ${CREXD_IMAGENAME_ARMHF}
+    restart: ${CREXD_RESTART_POLICY}
+    expose:
+      - 8080
+    environment:
+      - EXCHANGE_API_KEY
+      - EXCHANGE_API_SECRET
+      - CREXD_ARGS=http --db-url=mongodb://mongo:27017/$CREXD_MONGO_DBNAME --addr :8080 --debug
+    links:
+      - mongo
+
+  web:
+    hostname: web
+    image: ${CREXD_FE_IMAGENAME_ARMHF}
+    ports:
+      - ${CREXD_WEB_HTTP_PORT}:80
+    restart: ${CREXD_RESTART_POLICY}
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    links:
+      - api

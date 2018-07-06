@@ -216,7 +216,7 @@ func (c *currencyConverter) ConvertCurrency(fromCurrency, toCurrency string, amo
 	return amount.Mul(last), nil
 }
 
-func (c *currencyConverter) MarketRate(fromCurrency, toCurrency string) (last decimal.Decimal, bid decimal.Decimal, ask decimal.Decimal, err error) {
+func (c *currencyConverter) MarketRate(fromCurrency, toCurrency string) (last, bid, ask decimal.Decimal, err error) {
 	if fromCurrency == toCurrency {
 		return decimal.NewFromFloat(1), decimal.NewFromFloat(1), decimal.NewFromFloat(1), nil
 	}
@@ -234,8 +234,7 @@ func (c *currencyConverter) MarketRate(fromCurrency, toCurrency string) (last de
 			return
 		}
 	}
-	err = fmt.Errorf("neither market '%s-%s' nor '%s-%s' found in markets", fromCurrency, toCurrency, toCurrency, fromCurrency)
-	return
+	return last, bid, ask, fmt.Errorf("neither market '%s-%s' nor '%s-%s' found in markets", fromCurrency, toCurrency, toCurrency, fromCurrency)
 }
 
 // func (c *currencyConverter) MarketRateWorkaround(fromCurrency /* CUR3 */, toCurrency /* BTC */ string) (last decimal.Decimal, bid decimal.Decimal, ask decimal.Decimal, err error) {

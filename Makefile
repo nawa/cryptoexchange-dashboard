@@ -7,6 +7,8 @@ LDFLAGS=-ldflags "-X github.com/nawa/cryptoexchange-dashboard/cmd.CommitHash=${C
 MY_UID = $(shell id -u)
 WORKDIR := $(PWD)
 COVERAGE_DIR=$(CURDIR)/coverage
+ENABLED_LINTERS = --enable=goimports --enable=nakedret --enable=unparam
+CREXD_BUILDER_IMAGE = golang:1.10
 
 build:
 	@ echo "-> Building binary ..."
@@ -15,7 +17,7 @@ build:
 
 linter:
 	@ echo "-> Running linters ..."
-	@ gometalinter --vendor --skip frontend --config=.gometalinter.json --enable=goimports ./...
+	@ gometalinter --vendor --skip frontend --config=.gometalinter.json $(ENABLED_LINTERS) ./...
 .PHONY: linter
 
 mockgen:
@@ -85,21 +87,59 @@ coverage-open:
 	open $(COVERAGE_DIR)/coverage-total.html
 .PHONY: coverage-open
 
-docker-image-build-x86:
-	@ echo "-> Building Docker image ..."
+docker-build-fe-x86:
+	@ echo "-> Building Docker image $(CREXD_FE_IMAGENAME_X86)..."
+	docker rmi -f $(CREXD_FE_IMAGENAME_X86):bak || true
+	docker tag $(CREXD_FE_IMAGENAME_X86) $(CREXD_FE_IMAGENAME_X86):bak || true
+	docker rmi -f $(CREXD_FE_IMAGENAME_X86) || true
+	docker build -f $(WORKDIR)/$(CREXD_FE_DOCKERFILE_X86) -t $(CREXD_FE_IMAGENAME_X86) $(WORKDIR)/frontend
+
+docker-build-be-x86:
+	@ echo "-> Building Docker image $(CREXD_IMAGENAME_X86)..."
 	docker rmi -f $(CREXD_IMAGENAME_X86):bak || true
 	docker tag $(CREXD_IMAGENAME_X86) $(CREXD_IMAGENAME_X86):bak || true
 	docker rmi -f $(CREXD_IMAGENAME_X86) || true
 	docker run --rm -v "$(WORKDIR)":/go/src/github.com/nawa/cryptoexchange-dashboard -w /go/src/github.com/nawa/cryptoexchange-dashboard $(CREXD_BUILDER_IMAGE) /bin/bash -c "CGO_ENABLED=0 GOOS=linux make build && chown -R $(MY_UID) bin"
 	docker build -f $(WORKDIR)/$(CREXD_DOCKERFILE_X86) -t $(CREXD_IMAGENAME_X86) $(WORKDIR)
 
-docker-image-build-armhf:
-	@ echo "-> Building Docker image ..."
+docker-build-x86: docker-build-be-x86 docker-build-fe-x86
+
+docker-build-fe-armhf:
+	@ echo "-> Building Docker image $(CREXD_FE_IMAGENAME_ARMHF)..."
+	docker rmi -f $(CREXD_FE_IMAGENAME_ARMHF):bak || true
+	docker tag $(CREXD_FE_IMAGENAME_ARMHF) $(CREXD_FE_IMAGENAME_ARMHF):bak || true
+	docker rmi -f $(CREXD_FE_IMAGENAME_ARMHF) || true
+	docker build -f $(WORKDIR)/$(CREXD_FE_DOCKERFILE_ARMHF) -t $(CREXD_FE_IMAGENAME_ARMHF) $(WORKDIR)/frontend
+
+docker-build-be-armhf:
+	@ echo "-> Building Docker image $(CREXD_IMAGENAME_ARMHF) ..."
 	docker rmi -f $(CREXD_IMAGENAME_ARMHF):bak || true
 	docker tag $(CREXD_IMAGENAME_ARMHF) $(CREXD_IMAGENAME_ARMHF):bak || true
 	docker rmi -f $(CREXD_IMAGENAME_ARMHF) || true
 	docker run --rm -v "$(WORKDIR)":/go/src/github.com/nawa/cryptoexchange-dashboard -w /go/src/github.com/nawa/cryptoexchange-dashboard $(CREXD_BUILDER_IMAGE) /bin/bash -c "CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 make build && chown -R $(MY_UID) bin"
 	docker build -f $(WORKDIR)/$(CREXD_DOCKERFILE_ARMHF) -t $(CREXD_IMAGENAME_ARMHF) $(WORKDIR)
+
+docker-build-armhf: docker-build-be-armhf docker-build-fe-armhf
+
+docker-publish-fe-x86:
+	@ echo "-> Publishing Docker image $(CREXD_FE_IMAGENAME_X86)..."
+	docker push $(CREXD_FE_IMAGENAME_X86):latest
+
+docker-publish-be-x86:
+	@ echo "-> Publishing Docker image $(CREXD_IMAGENAME_X86)..."
+	docker push $(CREXD_IMAGENAME_X86):latest
+
+docker-publish-x86: docker-publish-fe-x86 docker-publish-be-x86
+
+docker-publish-fe-armhf:
+	@ echo "-> Publishing Docker image $(CREXD_FE_IMAGENAME_ARMHF)..."
+	docker push $(CREXD_FE_IMAGENAME_ARMHF):latest
+
+docker-publish-be-armhf:
+	@ echo "-> Publishing Docker image $(CREXD_IMAGENAME_ARMHF)..."
+	docker push $(CREXD_IMAGENAME_ARMHF):latest
+
+docker-publish-armhf: docker-publish-fe-armhf docker-publish-be-armhf
 
 #make docker-compose-x86 DCO_ARGS="up -d"
 docker-compose-x86:
@@ -113,16 +153,3 @@ docker-rmi-x86:
 
 docker-rmi-armhf:
 	docker rmi $(CREXD_IMAGENAME_ARMHF)
-
-docker-run-sync:
-	docker rm $(CREXD_SYNC_CONTAINER_NAME) || true
-	docker run -d --name $(CREXD_SYNC_CONTAINER_NAME) $(CREXD_SYNC_ENVIRONMENT) $(CREXD_SYNC_RESTART) $(CREXD_IMAGENAME_X86)
-
-docker-stop-sync:
-	docker stop $(CREXD_SYNC_CONTAINER_NAME)
-
-docker-start-sync:
-	docker start $(CREXD_SYNC_CONTAINER_NAME)
-
-docker-rmf-sync:
-	docker rm -f $(CREXD_SYNC_CONTAINER_NAME)

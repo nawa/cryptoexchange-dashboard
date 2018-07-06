@@ -4,5 +4,5 @@
     "cmd/sync.go.*Potential hardcoded credentials",
     "usecase/mocks/order_mock.go.*file is not goimported"
   ],
-  "Deadline" : "1m"
+  "Deadline" : "10m"
 }

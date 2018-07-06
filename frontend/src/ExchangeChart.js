@@ -2,7 +2,7 @@ import React from 'react';
 import moment from 'moment';
 import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ReferenceArea } from 'recharts';
 import { Container, Row, Col, ButtonGroup, Button } from "reactstrap";
-import config from "./config.json";
+import config from "./config.js";
 import { ScaleLoader } from 'halogenium';
 
 const getAxisYDomain = (data, from, to, ref, offset) => {
@@ -94,7 +94,7 @@ class ExchangeChart extends React.Component {
     this.setState(() => ({
       loading: true
     }));
-    return fetch(config.backend + endpoint, {
+    return fetch(config.api.url + endpoint, {
       method: 'GET'
     })
       .then((response) => response.json())
