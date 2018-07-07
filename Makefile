@@ -4,11 +4,9 @@ export $(shell sed 's/=.*//' docker/env)
 COMMIT_HASH=`git rev-parse --short HEAD 2>/dev/null`
 BUILD_DATE=`date -u +%FT%T%z`
 LDFLAGS=-ldflags "-X github.com/nawa/cryptoexchange-dashboard/cmd.CommitHash=${COMMIT_HASH} -X github.com/nawa/cryptoexchange-dashboard/cmd.BuildDate=${BUILD_DATE}"
-MY_UID = $(shell id -u)
 WORKDIR := $(PWD)
 COVERAGE_DIR=$(CURDIR)/coverage
 ENABLED_LINTERS = --enable=goimports --enable=nakedret --enable=unparam
-CREXD_BUILDER_IMAGE = golang:1.10
 
 build:
 	@ echo "-> Building binary ..."
@@ -99,7 +97,6 @@ docker-build-be-x86:
 	docker rmi -f $(CREXD_IMAGENAME_X86):bak || true
 	docker tag $(CREXD_IMAGENAME_X86) $(CREXD_IMAGENAME_X86):bak || true
 	docker rmi -f $(CREXD_IMAGENAME_X86) || true
-	docker run --rm -v "$(WORKDIR)":/go/src/github.com/nawa/cryptoexchange-dashboard -w /go/src/github.com/nawa/cryptoexchange-dashboard $(CREXD_BUILDER_IMAGE) /bin/bash -c "CGO_ENABLED=0 GOOS=linux make build && chown -R $(MY_UID) bin"
 	docker build -f $(WORKDIR)/$(CREXD_DOCKERFILE_X86) -t $(CREXD_IMAGENAME_X86) $(WORKDIR)
 
 docker-build-x86: docker-build-be-x86 docker-build-fe-x86
@@ -116,7 +113,6 @@ docker-build-be-armhf:
 	docker rmi -f $(CREXD_IMAGENAME_ARMHF):bak || true
 	docker tag $(CREXD_IMAGENAME_ARMHF) $(CREXD_IMAGENAME_ARMHF):bak || true
 	docker rmi -f $(CREXD_IMAGENAME_ARMHF) || true
-	docker run --rm -v "$(WORKDIR)":/go/src/github.com/nawa/cryptoexchange-dashboard -w /go/src/github.com/nawa/cryptoexchange-dashboard $(CREXD_BUILDER_IMAGE) /bin/bash -c "CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 make build && chown -R $(MY_UID) bin"
 	docker build -f $(WORKDIR)/$(CREXD_DOCKERFILE_ARMHF) -t $(CREXD_IMAGENAME_ARMHF) $(WORKDIR)
 
 docker-build-armhf: docker-build-be-armhf docker-build-fe-armhf

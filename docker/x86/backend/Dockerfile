@@ -1,6 +1,13 @@
+FROM golang:1.10 as builder
+
+WORKDIR /go/src/github.com/nawa/cryptoexchange-dashboard
+COPY . /go/src/github.com/nawa/cryptoexchange-dashboard
+
+RUN CGO_ENABLED=0 GOOS=linux make build
+
 FROM alpine:latest
 WORKDIR /app
-COPY ./bin/cryptoexchange-dashboard /app/
+COPY --from=builder /go/src/github.com/nawa/cryptoexchange-dashboard/bin/* /app/
 EXPOSE 8080
 
 RUN apk update \
