@@ -1,0 +1,67 @@
+sudo: required
+
+dist: trusty
+
+services:
+- docker
+
+language: go
+
+go:
+  - 1.10.x
+
+git:
+  depth: 1
+
+env:
+  global:
+    secure: Gnac9rY7V1Tkksz1dni5hmlYtgzk6Ss33YrNB/WNLt/FAteejjjzwQjNioDTVrZxRrFXKQj4r4h+kPUdtmEVJ9siwoRx6fcFgdOfS6lMZfG4F4J0O1akV9xNjMkZC4lVR6c+yko3NIZG4jA9DfzEVOcvOw4TCm2aWXjY42GqmD74uhh3IVsu97cv67mpjzI8kdmAx6ucFmK+zgHKUxlTRpO2Aq/P0SuAyysmqqmeQW5Y0869YugvvDdsndhP2ESIcATB5L3FquLuKoDQFwcOWkrU/dwCsqT7/8pv3wlHQHpUx/f2pETJz6l5hu9GkFXOrmJZj/zbJ5p6KxX1tcmjvIv0YNvaX/+gS11QX/56NFe4WrDaA5BPdIY+yi1JDiRY0tQ4evbhZ9/CW0yMZZpDgXo+ccMseLraM8r/jC+bZadi1yTebIgfc8lSzcKSjCUYQcexdKo6nTy4nK13iraLtnk/pI5mmNdZ+SqiTCXlrT+Jh/+rtHAJdgsIuW1lreffaoMZW0la+ubC2sH0TISJMtHhdUOPHMRAE19vPoSeL9L5V39qp8u0fJJ4e0JEF6Jd7PRbfQSlVNJqIW8LJO1JfpD4VyqI8dC3/4kua5OaKhTJ80QRJ60x8vyNf8vfRvYWXunnrfNLJv0TGtrnzTGVo29hqwRRAyi5nA9VSyCwF/g=
+
+#We need at lest docker v18
+before_install:
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) edge"
+  - sudo apt-get update
+  - sudo apt-get -y install docker-ce
+  - docker --version
+
+jobs:
+  include:
+
+  - stage: Tests
+    script:
+    - make test
+
+  - stage: Build and push docker image nawa/cryptoexchange-dashboard
+    before_script:
+    - mv docker/env.template docker/env
+    script:
+    - echo "$DOCKER_PASSWORD" | docker login -u nawa --password-stdin
+    - make docker-build-be-x86
+    - make docker-publish-be-x86
+
+  - stage: Build and push docker image nawa/cryptoexchange-dashboard-frontend
+    before_script:
+    - mv docker/env.template docker/env
+    script:
+    - echo "$DOCKER_PASSWORD" | docker login -u nawa --password-stdin
+    - make docker-build-fe-x86
+    - make docker-publish-fe-x86
+  
+  - stage: Build and push docker image nawa/cryptoexchange-dashboard-armhf
+    before_script:
+    - mv docker/env.template docker/env
+    - sudo apt-get install qemu-user-static -y
+    - docker run --rm --privileged multiarch/qemu-user-static:register
+    script:
+    - echo "$DOCKER_PASSWORD" | docker login -u nawa --password-stdin
+    - make docker-build-be-armhf
+    - make docker-publish-be-armhf
+  
+  - stage: Build and push docker image nawa/cryptoexchange-dashboard-frontend-armhf
+    before_script:
+    - mv docker/env.template docker/env
+    script:
+    - echo "$DOCKER_PASSWORD" | docker login -u nawa --password-stdin
+    - make docker-build-fe-armhf
+    - make docker-publish-fe-armhf

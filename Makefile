@@ -90,7 +90,7 @@ docker-build-fe-x86:
 	docker rmi -f $(CREXD_FE_IMAGENAME_X86):bak || true
 	docker tag $(CREXD_FE_IMAGENAME_X86) $(CREXD_FE_IMAGENAME_X86):bak || true
 	docker rmi -f $(CREXD_FE_IMAGENAME_X86) || true
-	docker build -f $(WORKDIR)/$(CREXD_FE_DOCKERFILE_X86) -t $(CREXD_FE_IMAGENAME_X86) $(WORKDIR)/frontend
+	docker --debug build -f $(WORKDIR)/$(CREXD_FE_DOCKERFILE_X86) -t $(CREXD_FE_IMAGENAME_X86) $(WORKDIR)/frontend
 
 docker-build-be-x86:
 	@ echo "-> Building Docker image $(CREXD_IMAGENAME_X86)..."

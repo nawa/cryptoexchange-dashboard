@@ -1,5 +1,7 @@
 ## cryptoexchange-dashboard
 
+[![build status](https://img.shields.io/travis/nawa/cryptoexchange-dashboard/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)
+
 Primarily this project is my field for experiments in Go and it is slightly overloaded
 
 The tool allows you to sync your data from cryptocurrency exchanges and see the progress in time on web UI. Currently, only Bittrex is supported
