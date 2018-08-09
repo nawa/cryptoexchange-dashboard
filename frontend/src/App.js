@@ -70,7 +70,7 @@ class App extends Component {
           <NavbarBrand href="/">CryptoExchange Dashboard</NavbarBrand>
           <Nav className="navbar-nav">
             <NavItem>
-              <NavLink href="https://github.com/">Github</NavLink>
+              <NavLink href="https://github.com/nawa/cryptoexchange-dashboard">Github</NavLink>
             </NavItem>
           </Nav>
         </Navbar>
