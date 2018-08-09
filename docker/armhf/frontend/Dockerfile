@@ -13,7 +13,7 @@ COPY . /usr/src/app
 
 RUN REACT_APP_STAGE=prod npm run build
 
-FROM lsioarmhf/nginx-armhf:latest
+FROM arm32v7/nginx:1.14
 COPY --from=builder /usr/src/app/build /usr/share/nginx/html
 EXPOSE 80
 VOLUME /usr/src/app/

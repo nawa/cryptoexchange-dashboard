@@ -17,7 +17,7 @@ env:
   global:
     secure: Gnac9rY7V1Tkksz1dni5hmlYtgzk6Ss33YrNB/WNLt/FAteejjjzwQjNioDTVrZxRrFXKQj4r4h+kPUdtmEVJ9siwoRx6fcFgdOfS6lMZfG4F4J0O1akV9xNjMkZC4lVR6c+yko3NIZG4jA9DfzEVOcvOw4TCm2aWXjY42GqmD74uhh3IVsu97cv67mpjzI8kdmAx6ucFmK+zgHKUxlTRpO2Aq/P0SuAyysmqqmeQW5Y0869YugvvDdsndhP2ESIcATB5L3FquLuKoDQFwcOWkrU/dwCsqT7/8pv3wlHQHpUx/f2pETJz6l5hu9GkFXOrmJZj/zbJ5p6KxX1tcmjvIv0YNvaX/+gS11QX/56NFe4WrDaA5BPdIY+yi1JDiRY0tQ4evbhZ9/CW0yMZZpDgXo+ccMseLraM8r/jC+bZadi1yTebIgfc8lSzcKSjCUYQcexdKo6nTy4nK13iraLtnk/pI5mmNdZ+SqiTCXlrT+Jh/+rtHAJdgsIuW1lreffaoMZW0la+ubC2sH0TISJMtHhdUOPHMRAE19vPoSeL9L5V39qp8u0fJJ4e0JEF6Jd7PRbfQSlVNJqIW8LJO1JfpD4VyqI8dC3/4kua5OaKhTJ80QRJ60x8vyNf8vfRvYWXunnrfNLJv0TGtrnzTGVo29hqwRRAyi5nA9VSyCwF/g=
 
-#We need at lest docker v18
+#We need at least docker v18 to build FE images because of complex location all required files
 before_install:
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
   - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) edge"

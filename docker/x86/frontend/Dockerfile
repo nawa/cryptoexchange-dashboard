@@ -13,7 +13,7 @@ COPY . /usr/src/app
 
 RUN REACT_APP_STAGE=prod npm run build
 
-FROM nginx:1.13.9-alpine
+FROM nginx:1.14-alpine
 COPY --from=builder /usr/src/app/build /usr/share/nginx/html
 EXPOSE 80
 VOLUME /usr/src/app/
