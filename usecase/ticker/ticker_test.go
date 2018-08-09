@@ -1,7 +1,7 @@
 package ticker
 
 import (
-	"bytes"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -12,9 +12,9 @@ import (
 )
 
 func TestTicker_Start(t *testing.T) {
-	var i int
+	var i int32
 	ticker := NewTicker(time.Millisecond, func() error {
-		i = i + 1
+		atomic.AddInt32(&i, 1)
 		return nil
 	})
 	ticker.log = utils.NewDevNullLog()
@@ -22,7 +22,7 @@ func TestTicker_Start(t *testing.T) {
 	assert.NoError(t, err)
 	time.Sleep(time.Millisecond * 10)
 
-	assert.True(t, i > 2)
+	assert.True(t, atomic.LoadInt32(&i) > 2)
 }
 
 func TestTicker_Start_ErrorDoubleStart(t *testing.T) {
@@ -42,7 +42,7 @@ func TestTicker_Start_ErrorFromTickF(t *testing.T) {
 	ticker := NewTicker(time.Millisecond, func() error {
 		return errors.New("some error")
 	})
-	var out *bytes.Buffer
+	var out *utils.SpyLogger
 	ticker.log, out = utils.NewSpyLog()
 
 	err := ticker.Start()
@@ -54,14 +54,14 @@ func TestTicker_Start_ErrorFromTickF(t *testing.T) {
 }
 
 func TestTicker_Stop(t *testing.T) {
-	var i int
+	var i int32
 	var ticker *Ticker
 	ticker = NewTicker(time.Millisecond, func() error {
 		ticker.Stop()
 		//safe to stop twice
 		ticker.Stop()
 		ticker.Stop()
-		i = i + 1
+		atomic.AddInt32(&i, 1)
 		return nil
 	})
 	ticker.log = utils.NewDevNullLog()
@@ -69,5 +69,5 @@ func TestTicker_Stop(t *testing.T) {
 	assert.NoError(t, err)
 	time.Sleep(time.Millisecond * 10)
 
-	assert.Equal(t, 1, i)
+	assert.Equal(t, int32(1), atomic.LoadInt32(&i))
 }

@@ -1,6 +1,7 @@
 package ticker
 
 import (
+	"sync"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -14,6 +15,7 @@ type Ticker struct {
 	timeTicker *time.Ticker
 	tickerF    TickF
 	log        *logrus.Entry
+	lock       sync.Mutex
 }
 
 func NewTicker(period time.Duration, tickerF TickF) *Ticker {
@@ -26,6 +28,9 @@ func NewTicker(period time.Duration, tickerF TickF) *Ticker {
 }
 
 func (t *Ticker) Start() error {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
 	if t.timeTicker != nil {
 		return errors.New("ticker is already started")
 	}
@@ -43,6 +48,9 @@ func (t *Ticker) Start() error {
 }
 
 func (t *Ticker) Stop() {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
 	if t.timeTicker == nil {
 		return
 	}

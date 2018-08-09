@@ -29,7 +29,7 @@ mockgen:
 unit-test:
 	@ echo "-> Run unit tests ..."
 
-	go test -v ./...
+	go test -v -race ./...
 .PHONY: unit-test
 
 unit-test-coverage:
@@ -38,10 +38,10 @@ unit-test-coverage:
 	@mkdir -p $(COVERAGE_DIR)
 
 	@go list ./... | grep -v "/testdata" | grep -v "/mocks" | xargs -I {} mkdir -p $(COVERAGE_DIR)/{}
-	@go list ./... | grep -v "/testdata" | grep -v "/mocks" | xargs -I {} go test -v -coverprofile $(COVERAGE_DIR)/{}/cover.out $(GOTEST_PARAM) {}
+	@go list ./... | grep -v "/testdata" | grep -v "/mocks" | xargs -I {} go test -v -race -coverprofile $(COVERAGE_DIR)/{}/cover.out $(GOTEST_PARAM) {}
 
-	@echo "mode: set" > $(COVERAGE_DIR)/coverage-total.out
-	@go list ./... | grep -v "/testdata" | grep -v "/mocks" | xargs -I {} cat $(COVERAGE_DIR)/{}/cover.out {} 2>/dev/null | grep -v "mode: set" >> $(COVERAGE_DIR)/coverage-total.out
+	@echo "mode: atomic" > $(COVERAGE_DIR)/coverage-total.out
+	@go list ./... | grep -v "/testdata" | grep -v "/mocks" | xargs -I {} cat $(COVERAGE_DIR)/{}/cover.out {} 2>/dev/null | grep -v "mode: atomic" >> $(COVERAGE_DIR)/coverage-total.out
 
 	@go tool cover -func=$(COVERAGE_DIR)/coverage-total.out | tail -n 1 | xargs -I {} echo "TOTAL COVERAGE. "{}
 
@@ -52,7 +52,7 @@ test:
 
 	docker-compose --file $(WORKDIR)/int-tests/env/docker-compose.yml down; \
     	docker-compose --file $(WORKDIR)/int-tests/env/docker-compose.yml up -d; \
-		DB_TEST_URL=localhost:27019/crexd-test go test -v -tags=integration_test ./...; \
+		DB_TEST_URL=localhost:27019/crexd-test go test -v -race -tags=integration_test ./...; \
 		status=$$?; \
 		docker-compose --file $(WORKDIR)/int-tests/env/docker-compose.yml down; \
 		exit $$status
@@ -69,11 +69,11 @@ test-coverage:
 	docker-compose --file $(WORKDIR)/int-tests/env/docker-compose.yml down; \
         	docker-compose --file $(WORKDIR)/int-tests/env/docker-compose.yml up -d; \
         	export DB_TEST_URL=localhost:27019/crexd-test; \
-    		go list ./... | grep -v "/testdata" | grep -v "/mocks" | xargs -I {} go test -v -tags=integration_test -coverprofile $(COVERAGE_DIR)/{}/cover.out $(GOTEST_PARAM) {}; \
+    		go list ./... | grep -v "/testdata" | grep -v "/mocks" | xargs -I {} go test -v -race -tags=integration_test -coverprofile $(COVERAGE_DIR)/{}/cover.out $(GOTEST_PARAM) {}; \
     		status=$$?; \
     		docker-compose --file $(WORKDIR)/int-tests/env/docker-compose.yml down; \
-    		echo "mode: set" > $(COVERAGE_DIR)/coverage-total.out; \
-    		go list ./... | grep -v "/testdata" | grep -v "/mocks" | xargs -I {} cat $(COVERAGE_DIR)/{}/cover.out {} 2>/dev/null | grep -v "mode: set" >> $(COVERAGE_DIR)/coverage-total.out; \
+    		echo "mode: atomic" > $(COVERAGE_DIR)/coverage-total.out; \
+    		go list ./... | grep -v "/testdata" | grep -v "/mocks" | xargs -I {} cat $(COVERAGE_DIR)/{}/cover.out {} 2>/dev/null | grep -v "mode: atomic" >> $(COVERAGE_DIR)/coverage-total.out; \
     		go tool cover -func=$(COVERAGE_DIR)/coverage-total.out | tail -n 1 | xargs -I {} echo "TOTAL COVERAGE. "{}; \
     		exit $$status
 

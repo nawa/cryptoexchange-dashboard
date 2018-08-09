@@ -8,6 +8,25 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type SpyLogger struct {
+	sync.Mutex
+	b bytes.Buffer
+}
+
+func (s *SpyLogger) String() string {
+	s.Lock()
+	defer s.Unlock()
+
+	return s.b.String()
+}
+
+func (s *SpyLogger) Write(p []byte) (n int, err error) {
+	s.Lock()
+	defer s.Unlock()
+
+	return s.b.Write(p)
+}
+
 // ExecuteConcurrently is helper function to execute set of tasks concurrently
 // returns slice of errors, empty if no errors occurred
 func ExecuteConcurrently(tasks []func() error) []error {
@@ -35,14 +54,14 @@ func ExecuteConcurrently(tasks []func() error) []error {
 }
 
 // NewSpyLog creates fake logger containing produced output
-func NewSpyLog() (logEntry *logrus.Entry, out *bytes.Buffer) {
-	out = &bytes.Buffer{}
+func NewSpyLog() (*logrus.Entry, *SpyLogger) {
+	var spyLogger SpyLogger
 
 	logger := logrus.New()
-	logger.Out = out
+	logger.Out = &spyLogger
 	logger.Level = logrus.ErrorLevel
 
-	return logrus.NewEntry(logger), out
+	return logrus.NewEntry(logger), &spyLogger
 }
 
 type devNullWriter struct {
